@@ -8,8 +8,10 @@ public class Test
 
         IPCPResponse res = IPCP.send
         (
-            new IPCPRequest(IPCPRequest.Type.UPDATE, 12345)
+            new IPCPRequest(IPCPRequest.Type.GET, 12345)
         );
+
+        System.out.println("Response:\nStatus: " + res.code + "\nMessage: " + res.message);
 
         IPCP.close();
     }

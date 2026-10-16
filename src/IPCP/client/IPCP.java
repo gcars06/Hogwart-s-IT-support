@@ -58,7 +58,7 @@ public class IPCP
         }
         catch(IOException e)
         {
-            System.err.printf("Failed to initialize IPCP.%n%s%n", e);
+            System.err.printf("%nFailed to initialize IPCP.%n%s%n", e);
             close();
             return false;
         }
