@@ -14,6 +14,14 @@
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+/**
+* Attributes:
+*   - code: enum StatusCode
+*   - message: String
+*
+* Methods:
+*   - N/A
+*/
 class IPCPResponse
 {
     public enum StatusCode
@@ -26,33 +34,33 @@ class IPCPResponse
         SERVER_ERROR,   // 5
         BAD_RESPONSE    // 6
     }
+    static final StatusCode[] statuses = StatusCode.values();
 
     public StatusCode code;
     public String message;
 
     public IPCPResponse(byte[] data)
     {
-        final StatusCode[] statuses = StatusCode.values();
-        int byteCounter = 0;
+        // Next free position in data buffer
+        int datap = 0;
 
         try
         {
             // First byte from server should contain code.
-            this.code = statuses[data[byteCounter]];
-            byteCounter += 1; // Only one byte used for code
+            this.code = statuses[data[datap++]];
 
             // Next 4 bytes are the message's length.
-            int msgLength = ByteBuffer.wrap(data, byteCounter, 4).getInt();
-            byteCounter += 4; // ints are 4 bytes.
+            int msgLength = ByteBuffer.wrap(data, datap, 4).getInt();
+            datap += 4; // ints are 4 bytes.
 
             message = new String
             (
-                data,
-                byteCounter,
-                msgLength,
-                StandardCharsets.UTF_8
+                data,                  // Data buffer to read from
+                datap,                 // Position of message in data buffer
+                msgLength,             // Length of message
+                StandardCharsets.UTF_8 // Charset - UTF-8
             );
-            byteCounter += msgLength;
+            datap += msgLength;
         }
         catch(Exception _ignored)
         {

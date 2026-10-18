@@ -4,9 +4,9 @@
 * This is a protocol designed to facilitate communication between the Java
 * frontend, and the C++ backend server, using Linux named pipes (FIFO).
 *
-* The backend server should be run first, which will initialize the the pipes.
+* The backend server should be run first, which will initialize the pipes.
 * There are two pipes: one for requests and the other for responses; this is
-* done to avoid from constant disconnect/recconections to a single pipe for
+* done to avoid from constant disconnect/reconnections to a single pipe for
 * bidirectional communication.
 *
 * The IPCP class is meant to be used statically. During program initialization,
@@ -46,13 +46,13 @@ public class IPCP
 
         try
         {
-            System.out.print("Connecting to outbound pipe... ");
+            System.out.print("Connecting to request pipe... ");
             out = new FileOutputStream(PIPE_REQ);
-            System.out.println("Done!");
+            System.out.println("Done");
 
-            System.out.print("Connecting to inbound pipe... ");
+            System.out.print("Connecting to response pipe... ");
             in = new FileInputStream(PIPE_RES);
-            System.out.println("Done!");
+            System.out.println("Done");
 
             return true;
         }
@@ -66,8 +66,14 @@ public class IPCP
 
     public static void close()
     {
+        System.out.print("Closing request pipe... ");
         try { if(out != null) out.close(); } catch(IOException _ignored) {}
+        System.out.println("Done"); 
+
+        System.out.print("Closing response pipe... ");
         try { if(in != null) in.close(); } catch(IOException _ignored) {}
+        System.out.println("Done");
+
         out = null;
         in = null;
     }

@@ -5,7 +5,7 @@
 * frontend, and the C++ backend server, using Linux named pipes (FIFO).
 *
 * On launch, the server must run IPCP::init(), and IPCP::close() needs to run
-* before exit. IPCP::read() will wait for a request from the server, then
+* before exit. IPCP::read() will wait for a request from the client, then
 * construct/return an IPCPRequest object. To send a response, we must create
 * an IPCPResponse object, and send that with IPCP::write().
 *
@@ -15,18 +15,18 @@
 */
 #include <cstdint>
 #include <iostream>
+#include <cerrno>
 
 #include <unistd.h>
 #include <sys/stat.h>
 #include <filesystem>
 #include <fstream>
-#include <cerrno>
 
 using namespace std;
 
 #define PIPE_REQ "/tmp/com.hogwarts.health.req"
 #define PIPE_RES "/tmp/com.hogwarts.health.res"
-#define PIPE_MODE (S_IRUSR | S_IWUSR)
+#define PIPE_MODE (S_IRUSR | S_IWUSR) // file mode 600
 
 #include "IPCPRequest.cpp"
 #include "IPCPResponse.cpp"
@@ -104,10 +104,11 @@ namespace IPCP
     IPCPRequest
     read(void)
     {
-        char buffer[IPCPRequest::protocol_size];
-        (void) req_pipe.read(buffer, sizeof(buffer));
+        char header_buf[IPCPRequest::header_size];
+        (void) req_pipe.read(header_buf, sizeof(header_buf));
 
-        return IPCPRequest(buffer);
+        // Non-header fields handled in constructor
+        return IPCPRequest(header_buf, &req_pipe);
     }
 
     void
