@@ -18,12 +18,13 @@
 */
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import org.json.JSONObject;
 
 /**
 * Attributes:
 *   - type: enum Type
 *   - userID: int
-*   - demoField: String
+*   - body: String
 *
 * Methods:
 *   - getBytes(): byte[]
@@ -40,13 +41,18 @@ public class IPCPRequest
 
     public Type type;
     public int userID;
-    public String demoField;
+    public String body;
 
-    public IPCPRequest(Type type, int userID, String demoField)
+    public IPCPRequest(Type type, int userID, String body)
     {
         this.type = type;
         this.userID = userID;
-        this.demoField = demoField;
+        this.body = body;
+    }
+
+    public IPCPRequest(Type type, int userID, JSONObject body)
+    {
+        this(type, userID, body.toString());
     }
 
     public byte[] getBytes()
@@ -57,11 +63,11 @@ public class IPCPRequest
         *
         * All string fields need 4 bytes for the length (int) + the length of the string
         */
-        ByteBuffer buf = ByteBuffer.allocate(1 + 4 + 4 + demoField.length());
+        ByteBuffer buf = ByteBuffer.allocate(1 + 4 + 4 + this.body.length());
 
         buf.put((byte) this.type.ordinal());
         buf.putInt(this.userID);
-        inputString(buf, encode(demoField));
+        inputString(buf, encode(this.body));
 
         return buf.array();
     }

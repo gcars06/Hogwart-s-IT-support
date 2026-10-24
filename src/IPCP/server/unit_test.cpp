@@ -21,25 +21,28 @@ main(void)
     // Read incoming
     cout << "=== Reading incoming request from client ===" << endl << endl;
     IPCPRequest req = IPCP::read();
-    assert(req.type >= IPCPRequest::GET && req.type <= IPCPRequest::DELETE);
-    json in_payld = json::parse(req.demo_field);
-    cout << "Request:" << endl << "-Type: " << static_cast<int>(req.type) << endl << "-userID: " << req.userID << endl << "-demo_field: " << in_payld.dump(4) << endl;
-    cout << endl << "=== Success ===" << endl;
 
-    json out_payld = R"(
-        {
-            "message": "hello!"
-        }
-    )"_json;
+    assert(req.type >= IPCPRequest::GET && req.type <= IPCPRequest::DELETE);
+    json in_body = json::parse(req.body);
+
+    cout << "Request:" << endl << "-Type: " << static_cast<int>(req.type) << endl << "-UserID: " << req.userID << endl << "-Body: " << in_body.dump(4) << endl;
+    cout << endl << "=== Success ===" << endl;
 
     // Send outgoing
     cout << "=== Creating and sending response object ===" << endl << endl;
-    IPCPResponse res = (IPCPResponse)
-    {
+
+    json out_body = R"(
+        {
+            "message": "Invalid userID provided"
+        }
+    )"_json;
+    IPCPResponse res
+    (
         IPCPResponse::USER_NOT_FOUND,
-        out_payld.dump(4)
-        // "Provided userID not associated with any known user."
-    };
+        out_body.dump()
+    );
+    // Here's another example:
+    // IPCPResponse res(IPCPResponse::OK_NO_CONTENT);
     IPCP::write(res);
     cout << "=== Success ===" << endl;
 

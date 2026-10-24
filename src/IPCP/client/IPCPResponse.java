@@ -13,11 +13,12 @@
 */
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import org.json.JSONObject;
 
 /**
 * Attributes:
 *   - code: enum StatusCode
-*   - message: String
+*   - body: String
 *
 * Methods:
 *   - N/A
@@ -37,7 +38,7 @@ class IPCPResponse
     static final StatusCode[] statuses = StatusCode.values();
 
     public StatusCode code;
-    public String message;
+    public String body;
 
     public IPCPResponse(byte[] data)
     {
@@ -50,22 +51,22 @@ class IPCPResponse
             this.code = statuses[data[datap++]];
 
             // Next 4 bytes are the message's length.
-            int msgLength = ByteBuffer.wrap(data, datap, 4).getInt();
+            int bodyLength = ByteBuffer.wrap(data, datap, 4).getInt();
             datap += 4; // ints are 4 bytes.
 
-            message = new String
+            body = new String
             (
                 data,                  // Data buffer to read from
-                datap,                 // Position of message in data buffer
-                msgLength,             // Length of message
+                datap,                 // Position of body in data buffer
+                bodyLength,            // Length of body
                 StandardCharsets.UTF_8 // Charset - UTF-8
             );
-            datap += msgLength;
+            datap += bodyLength;
         }
         catch(Exception _ignored)
         {
             this.code = StatusCode.BAD_RESPONSE;
-            this.message = "Bad response received from server.";
+            this.body = "{\"message\": \"Bad response from server.\"}";
         }
     }
 }

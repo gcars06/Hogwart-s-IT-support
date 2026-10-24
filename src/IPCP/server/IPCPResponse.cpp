@@ -24,12 +24,15 @@
 #include <string>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 using namespace std;
+using json = nlohmann::json;
 
 /**
 * Attributes:
 *   - code: enum StatusCode(uint8_t)
-*   - message: string
+*   - body: string
 *
 * Methods:
 *   - to_bytes(): vector<uint8_t>
@@ -49,24 +52,21 @@ class IPCPResponse
     };
 
     StatusCode code;
-    string message;
+    string body;
 
-    IPCPResponse(const StatusCode code, const string message="")
-    {
-        this->code = code;
-        this->message = message;
-    }
+    IPCPResponse(const StatusCode c=BAD_RESPONSE, const string & b=""): code(c), body(b) {}
+    IPCPResponse(const StatusCode c, const json & j): IPCPResponse(c, j.dump()) {}
 
     vector<uint8_t>
     to_bytes(void)
     {
         vector<uint8_t> buf;
-        buf.reserve(sizeof(uint8_t) + sizeof(int32_t) + message.size());
+        buf.reserve(sizeof(uint8_t) + sizeof(int32_t) + this->body.size());
 
         // Status code
         buf.push_back(code);
 
-        if(message.size() == 0)
+        if(this->body.size() == 0)
         {
             // Client will expect 4 bytes
             buf.push_back(0);
@@ -76,16 +76,21 @@ class IPCPResponse
             return buf;
         }
 
-        // Message length
+        // Payload length
         // Break up into individual bytes and convert to big-endian 
-        uint32_t len = static_cast<uint32_t>(message.size());
+        uint32_t len = static_cast<uint32_t>(this->body.size());
         buf.push_back(static_cast<uint8_t>((len >> 24) & 0xFF));
         buf.push_back(static_cast<uint8_t>((len >> 16) & 0xFF));
         buf.push_back(static_cast<uint8_t>((len >>  8) & 0xFF));
         buf.push_back(static_cast<uint8_t>( len        & 0xFF));
 
-        // Message
-        buf.insert(buf.end(), message.begin(), message.end());
+        // Payload
+        buf.insert
+        (
+            buf.end(),
+            this->body.begin(),
+            this->body.end()
+        );
         return buf;
     }
 };

@@ -11,12 +11,12 @@ class unit_test
             return;
         }
 
-        JSONObject out_payld = new JSONObject("{\"message\": \"capybaras are awesome\"}");
+        JSONObject out_body = new JSONObject("{\"field\": \"food\", \"subfield\": \"calories\", \"value\": \"2000\"}");
 
-        IPCPRequest req = new IPCPRequest(IPCPRequest.Type.UPDATE, 12345, out_payld.toString());
+        IPCPRequest req = new IPCPRequest(IPCPRequest.Type.UPDATE, 12345, out_body.toString());
         IPCPResponse res = IPCP.send(req);
 
-        System.out.printf("%nResponse:%n-Code: %s%n-Message: %s%n%n", res.code, res.message);
+        System.out.printf("%nResponse:%n-Code: %s%n-Body: %s%n%n", res.code, res.body);
 
         IPCP.close();
     }

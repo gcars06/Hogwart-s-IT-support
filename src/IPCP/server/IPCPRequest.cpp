@@ -30,7 +30,7 @@ using namespace std;
 * Attributes:
 *   - type: enum Type(uint8_t)
 *   - userID: int32_t
-*   - demo_field: string
+*   - body: string
 *
 * Methods:
 *   - N/A
@@ -50,9 +50,9 @@ class IPCPRequest
 
     Type type;
     int32_t userID;
-    string demo_field;
+    string body;
 
-    IPCPRequest(const char header[header_size], ifstream* req_pipe)
+    IPCPRequest(const char header[header_size], ifstream * req_pipe)
     {
         // Next free position in header buffer
         uint32_t headerp = 0;
@@ -63,7 +63,7 @@ class IPCPRequest
         this->userID = ntohl(*(int32_t*)(header + headerp));
         headerp += sizeof(int32_t);
 
-        this->demo_field = decode_str(req_pipe);
+        this->body = decode_str(req_pipe);
     }
 
     /**
@@ -71,7 +71,7 @@ class IPCPRequest
     * the string in UTF-8. Call this method for every string field.
     */
     static string
-    decode_str(ifstream* req_pipe)
+    decode_str(ifstream * req_pipe)
     {
         char len_buf[sizeof(int32_t)];
         req_pipe->read(len_buf, sizeof(int32_t));

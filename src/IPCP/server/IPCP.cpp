@@ -112,7 +112,7 @@ namespace IPCP
     }
 
     void
-    write(IPCPResponse res)
+    write(IPCPResponse & res)
     {
         vector<uint8_t> bytes = res.to_bytes();
 
