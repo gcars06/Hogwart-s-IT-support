@@ -3,12 +3,16 @@ JAVA_CC  = javac
 JAVA_INT = java
 
 comp:
-	$(CPP_CC) -o test_server -I ../lib/json-cpp/include server/unit_test.cpp
+	$(CPP_CC) -o test_server -I ../../lib/json-cpp/include server/unit_test.cpp
 	$(JAVA_CC) -d . -cp "client:../../lib/json-java/json.jar" client/unit_test.java
 
-run: comp
+server: comp
 	./test_server &
 	$(JAVA_INT) unit_test 1>/dev/null
+
+client: comp
+	./test_server 1>/dev/null &
+	$(JAVA_INT) unit_test
 
 clean:
 	rm -f *.class client/*.class test_server
