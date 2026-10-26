@@ -1,0 +1,14 @@
+{
+    "cmake.sourceDirectory": "/home/gcars06/Desktop/CSC 131/Hogwart-s-IT-support/lib/json-cpp",
+    "java.debug.settings.onBuildFailureProceed": true,
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-25",
+            "path": "/usr/lib/jvm/zulu-jre25-fx",
+            "default": true
+        }
+    ],
+    "java.project.referencedLibraries": [
+        "lib/json-java/json.jar"
+    ]
+}

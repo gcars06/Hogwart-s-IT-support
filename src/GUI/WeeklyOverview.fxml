@@ -18,10 +18,10 @@
          <menus>
             <Menu mnemonicParsing="false" text="Home">
                <items>
-                  <MenuItem mnemonicParsing="false" text="Home" />
-                  <MenuItem mnemonicParsing="false" text="Daily" />
-                  <MenuItem mnemonicParsing="false" text="Weekly" />
-                  <MenuItem mnemonicParsing="false" text="Monthly" />
+                  <MenuItem mnemonicParsing="false" onAction="#navigate" text="Home" />
+                  <MenuItem mnemonicParsing="false" onAction="#navigate" text="Daily" />
+                  <MenuItem mnemonicParsing="false" onAction="#navigate" text="Weekly" />
+                  <MenuItem mnemonicParsing="false" onAction="#navigate" text="Monthly" />
                   <MenuItem mnemonicParsing="false" text="Goals" />
                   <MenuItem mnemonicParsing="false" text="Settings" />
                </items>

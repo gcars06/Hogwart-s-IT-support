@@ -1,0 +1,18 @@
+{
+  "configurations": [
+    {
+        "type": "java",
+        "name": "Main",
+        "request": "launch",
+        "mainClass": "GUI.Main",
+        "vmArgs": "--add-modules javafx.controls,javafx.fxml"
+    },
+    {
+        "type": "java",
+        "name": "Launch JavaFX",
+        "request": "launch",
+        "mainClass": "GUI.Main",
+        "vmArgs": "--add-modules javafx.controls,javafx.fxml"
+    }
+]
+}

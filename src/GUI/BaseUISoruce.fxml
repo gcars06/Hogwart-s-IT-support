@@ -48,9 +48,10 @@
       <menus>
         <Menu mnemonicParsing="false" text="Home">
                <items>
-                  <MenuItem fx:id="DailyMenuButton" mnemonicParsing="false" onAction="#gotoDaily" text="Daily" />
-                  <MenuItem fx:id="WeeklyMenuButton" mnemonicParsing="false" onAction="#gotoWeekly" text="Weekly" />
-                  <MenuItem fx:id="MonthlyMenuButton" mnemonicParsing="false" onAction="#gotoMonthly" text="Monthly" />
+                  <MenuItem mnemonicParsing="false" onAction="#navigate" text="Home" />
+                  <MenuItem fx:id="DailyMenuButton" mnemonicParsing="false" onAction="#navigate" text="Daily" />
+                  <MenuItem fx:id="WeeklyMenuButton" mnemonicParsing="false" onAction="#navigate" text="Weekly" />
+                  <MenuItem fx:id="MonthlyMenuButton" mnemonicParsing="false" onAction="#navigate" text="Monthly" />
                   <MenuItem fx:id="GoalsMenuButton" mnemonicParsing="false" text="Goals" />
                   <MenuItem fx:id="SettingsMenuButton" mnemonicParsing="false" text="Settings" />
                </items>

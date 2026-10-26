@@ -1,65 +1,60 @@
 package GUI;
 
-import javafx.application.*;
-import javafx.fxml.FXMLLoader;
-import javafx.stage.*;
-import javafx.scene.*;
-import javafx.scene.layout.*;
-import javafx.scene.control.*;
-
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.MenuItem;
+import javafx.stage.Stage;
 
 public class Main extends Application {
+    private static final String HOME_VIEW = "BaseUISoruce.fxml";
 
-    // Primary Stage
-    Stage window;
-    // Two scenes
-    Scene scene1, scene2;
-    // The panes are associated with the respective .fxml files
-    private Pane BaseUISourcePane;
-    private Pane DailyOverviewPane;
+    private Stage window;
 
     public static void main(String[] args) {
         launch(args);
     }
 
     @Override
-    public void start(Stage primaryStage) {
+    public void start(Stage primaryStage) throws IOException {
+        window = primaryStage;
+        window.setScene(new Scene(loadView(HOME_VIEW)));
+        window.setTitle("Hogwarts IT Support");
+        window.show();
+    }
+
+    @FXML
+    private void navigate(ActionEvent event) {
+        MenuItem menuItem = (MenuItem) event.getSource();
+        String view = switch (menuItem.getText()) {
+            case "Home" -> HOME_VIEW;
+            case "Daily" -> "DailyOverview.fxml";
+            case "Weekly" -> "WeeklyOverview.fxml";
+            case "Monthly" -> "MonthlyOverview.fxml";
+            default -> throw new IllegalArgumentException(
+                    "No scene is configured for menu item: " + menuItem.getText());
+        };
+
         try {
-            // Set the window as primary stage
-            window = primaryStage;
-
-            // Load the fxml files and their controllers
-            FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(Main.class.getResource("scene1.fxml"));
-            BaseUISourcePane = loader.load();
-            Scene1Controller controller1 = loader.getController();
-
-            loader = new FXMLLoader();
-            loader.setLocation(Main.class.getResource("scene2.fxml"));
-            DailyOverviewPane = loader.load();
-            Scene2Controller controller2 = loader.getController();
-
-            // The scenes are based on what has been loaded from the .fxml files
-            Scene scene1 = new Scene(BaseUISourcePane);
-            Scene scene2 = new Scene(DailyOverviewPane);
-
-            // Pass reference the each scenes controller
-            controller1.setScene2(scene2);
-            controller1.setMain(this);
-            controller2.setScene1(scene1);
-            controller2.setMain(this);
-
-            //Display scene 1 at first
-            window.setScene(scene1);
-            window.setTitle("Scene!");
-            window.show();
+            window.getScene().setRoot(loadView(view));
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new UncheckedIOException("Unable to load scene: " + view, e);
         }
     }
-    // used by the controllers to switch the scenes
-    public void setScene(Scene scene){
-        window.setScene(scene);
+
+    private Parent loadView(String resource) throws IOException {
+        var location = Main.class.getResource(resource);
+        if (location == null) {
+            throw new IllegalArgumentException("Scene resource not found: " + resource);
+        }
+
+        FXMLLoader loader = new FXMLLoader(location);
+        loader.setController(this);
+        return loader.load();
     }
 }
