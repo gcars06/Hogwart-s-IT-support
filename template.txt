@@ -1,0 +1,38 @@
+//Make sure to change a tiny bit with the prints but keep the out and in the same
+//Remove the comments and replace with your own comments
+
+//this is the java client
+
+public static void main(String[] args) {
+        System.out.print("Connecting to request pipe... "); //change the output here
+        out = new FileOutputStream(PIPE_REQ); // keep the same
+        System.out.println("Done"); //could change
+
+        System.out.print("Connecting to response pipe... "); //change
+        in = new FileInputStream(PIPE_RES); //keep
+        System.out.println("Done"); //could change
+    }
+
+//this is the C++ server
+
+init(void)
+    {
+        cout << "Creating request pipe... " << flush;
+        mkfifo(PIPE_REQ, PIPE_MODE)
+        cout << "Done" << endl;
+
+
+        cout << "Creating response pipe... " << flush;
+        mkfifo(PIPE_RES, PIPE_MODE)
+        cout << "Done" << endl;
+
+        cout << "Opening request pipe... " << flush;
+        req_pipe.open(PIPE_REQ);
+        cout << "Done" << endl;
+
+        cout << "Opening response pipe... " << flush;
+        res_pipe.open(PIPE_RES);
+        cout << "Done" << endl;
+
+        return true;
+    }
