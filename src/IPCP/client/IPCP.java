@@ -62,7 +62,7 @@ public class IPCP
             close();
             return false;
         }
-    }
+    } // boolean init()
 
     public static void close()
     {
@@ -76,7 +76,7 @@ public class IPCP
 
         out = null;
         in = null;
-    }
+    } // void close()
 
     public static IPCPResponse send(IPCPRequest req) throws IOException
     {
@@ -84,5 +84,5 @@ public class IPCP
         out.flush();
 
         return new IPCPResponse(in.readAllBytes());
-    }
+    } // IPCPResonse send()
 }

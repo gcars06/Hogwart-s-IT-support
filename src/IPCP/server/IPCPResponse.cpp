@@ -90,5 +90,5 @@ class IPCPResponse
             body_s.end()
         );
         return buf;
-    }
+    } // vector to_bytes()
 };

@@ -5,13 +5,13 @@ class unit_test
 {
     public static void main(String args[]) throws IOException
     {
-        System.out.println("=== Testing init system ===\n");
+        System.out.println("\n=== Testing init system ===");
         if(IPCP.init() == false)
         {
             System.err.println("Failed to initialize IPCP");
             return;
         }
-        System.out.println("\n=== Success ===\n");
+        System.out.println("=== Success ===\n");
 
         JSONObject out_body = new JSONObject("{\"field\": \"food\", \"subfield\": \"calories\", \"value\": \"2000\"}");
 
@@ -20,19 +20,14 @@ class unit_test
         (
             IPCPRequest.Type.UPDATE, // type
             12345,                   // userID
-            out_body.toString()      // body
+            out_body                 // body
         );
         IPCPResponse res = IPCP.send(req);
+        System.out.printf("Response:%n-Code: %s%n-Body: %s%n", res.code, res.body.toString());
         System.out.println("=== Success ===\n");
 
-        System.out.println("=== Parsing body contents ===");
-        JSONObject in_body = new JSONObject(res.body);
-        System.out.println("=== Success ===\n");
-
-        System.out.printf("Response:%n-Code: %s%n-Body: %s%n%n", res.code, in_body.toString());
-
-        System.out.println("=== Closing pipes ===\n");
+        System.out.println("=== Closing pipes ===");
         IPCP.close();
-        System.out.println("\n=== Success ===");
+        System.out.println("=== Success ===\n");
     }
 }

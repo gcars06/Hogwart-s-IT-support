@@ -1,9 +1,6 @@
 /**
 * IPCP - Inter-Process Communication Protocol
 *
-* W.I.P. - This class is not complete; attributes will need to be added/changed
-*          as project requirements develop.
-*
 * When receiving responses from the backend server, they will be converted into
 * an IPCPResponse object, from which the useful data can be extracted.
 *
@@ -18,7 +15,7 @@ import org.json.JSONObject;
 /**
 * Attributes:
 *   - code: enum StatusCode
-*   - body: String
+*   - body: JSONObject
 *
 * Methods:
 *   - N/A
@@ -38,7 +35,7 @@ class IPCPResponse
     static final StatusCode[] statuses = StatusCode.values();
 
     public StatusCode code;
-    public String body;
+    public JSONObject body;
 
     public IPCPResponse(byte[] data)
     {
@@ -54,19 +51,19 @@ class IPCPResponse
             int bodyLength = ByteBuffer.wrap(data, datap, 4).getInt();
             datap += 4; // ints are 4 bytes.
 
-            body = new String
+            body = new JSONObject(new String
             (
                 data,                  // Data buffer to read from
                 datap,                 // Position of body in data buffer
                 bodyLength,            // Length of body
                 StandardCharsets.UTF_8 // Charset - UTF-8
-            );
+            ));
             datap += bodyLength;
         }
         catch(Exception _ignored)
         {
             this.code = StatusCode.BAD_RESPONSE;
-            this.body = "{\"message\": \"Bad response from server.\"}";
+            this.body = new JSONObject("{\"message\": \"Bad response from server.\"}");
         }
-    }
+    } // IPCPResponse
 }
