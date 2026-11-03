@@ -29,9 +29,8 @@ IPCP.close();
 IPCP::init(); // Returns true on success, false on failure
 
 IPCPRequest req = IPCP::read();
-nlohmann::json req_body = json::parse(req.body);
 cout << "Request type: " << static_cast<int>(req.type) << endl;
-cout << "Request: " << req_body.dump(4) << endl; // dump(n); n=# of spaces/indent
+cout << "Request: " << req.body.dump(4) << endl; // dump(n); n=# of spaces for indentations
 
 IPCPResponse res(OK_NO_CONTENT);
 IPCP::write(res);

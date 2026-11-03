@@ -39,6 +39,7 @@ namespace IPCP
     bool
     init(void)
     {
+        // Start: Create pipes
         cout << "Creating request pipe... " << flush;
         if(mkfifo(PIPE_REQ, PIPE_MODE) == -1 && errno != EEXIST)
         {
@@ -54,7 +55,9 @@ namespace IPCP
             return false;
         }
         cout << "Done" << endl;
+        // End: Create pipes
 
+        // Start: Open pipes
         cout << "Opening request pipe... " << flush;
         req_pipe.open(PIPE_REQ);
         if(!req_pipe.is_open())
@@ -72,9 +75,10 @@ namespace IPCP
             return false;
         }
         cout << "Done" << endl;
+        // End: Open pipes
 
         return true;
-    }
+    } // bool init()
 
     void
     close(void)
@@ -82,6 +86,7 @@ namespace IPCP
         req_pipe.close();
         res_pipe.close();
 
+        // Start: Destroy pipes
         cout << "Removing request pipe... " << flush;
         try { filesystem::remove(PIPE_REQ); }
         catch(const filesystem::filesystem_error &err)
@@ -99,7 +104,8 @@ namespace IPCP
             "Error: " << err.what() << endl;
         }
         cout << "Done" << endl;
-    }
+        // End: Destroy pipes
+    } // void close()
 
     IPCPRequest
     read(void)
@@ -107,9 +113,9 @@ namespace IPCP
         char header_buf[IPCPRequest::header_size];
         (void) req_pipe.read(header_buf, sizeof(header_buf));
 
-        // Non-header fields handled in constructor
+        // Non-header fields read in constructor
         return IPCPRequest(header_buf, &req_pipe);
-    }
+    } // IPCPRequest read()
 
     void
     write(IPCPResponse & res)
@@ -118,7 +124,7 @@ namespace IPCP
 
         res_pipe.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
         res_pipe.flush();
-    }
+    } // void write()
 }
 
 #undef PIPE_MODE
