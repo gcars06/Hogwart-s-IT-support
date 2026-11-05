@@ -8,6 +8,7 @@
 * @see IPCPRequest.java
 * @author Lukas Lynch
 */
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import org.json.JSONObject;
@@ -32,33 +33,38 @@ class IPCPResponse
         SERVER_ERROR,   // 5
         BAD_RESPONSE    // 6
     }
-    static final StatusCode[] statuses = StatusCode.values();
+    public static final StatusCode[] statuses = StatusCode.values();
 
     public StatusCode code;
     public JSONObject body;
 
-    public IPCPResponse(byte[] data)
+    public IPCPResponse(InputStream in)
     {
-        // Next free position in data buffer
-        int datap = 0;
-
         try
         {
+            // Next free position in header buffer
+            int headerp = 0;
+
+            // 1=StatusCode, 4=Body length
+            byte[] header = new byte[1 + 4];
+            in.read(header, headerp, header.length);
+    
             // First byte from server should contain code.
-            this.code = statuses[data[datap++]];
+            this.code = statuses[header[headerp++]];
 
             // Next 4 bytes are the message's length.
-            int bodyLength = ByteBuffer.wrap(data, datap, 4).getInt();
-            datap += 4; // ints are 4 bytes.
+            int bodyLength = ByteBuffer.wrap(header, headerp, 4).getInt();
+            headerp += 4;
 
+            byte[] body_s = new byte[bodyLength]; // body_s(erial)
+            in.read(body_s, 0, bodyLength);
             body = new JSONObject(new String
             (
-                data,                  // Data buffer to read from
-                datap,                 // Position of body in data buffer
+                body_s,                // Data buffer to read from
+                0,                     // Position of body in data buffer
                 bodyLength,            // Length of body
                 StandardCharsets.UTF_8 // Charset - UTF-8
             ));
-            datap += bodyLength;
         }
         catch(Exception _ignored)
         {

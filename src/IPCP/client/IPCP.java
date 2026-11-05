@@ -83,6 +83,6 @@ public class IPCP
         out.write(req.getBytes());
         out.flush();
 
-        return new IPCPResponse(in.readAllBytes());
+        return new IPCPResponse(in);
     } // IPCPResonse send()
 }
