@@ -33,6 +33,10 @@ using namespace std;
 
 namespace IPCP
 {
+    // Prototypes
+    bool init(void);
+    void close(void);
+
     ifstream req_pipe;
     ofstream res_pipe;
 
@@ -40,38 +44,41 @@ namespace IPCP
     init(void)
     {
         // Start: Create pipes
-        cout << "Creating request pipe... " << flush;
+        cout << "IPCP: Creating request pipe... " << flush;
         if(mkfifo(PIPE_REQ, PIPE_MODE) == -1 && errno != EEXIST)
         {
-            cerr << endl << "Failed to create request pipe at: " << PIPE_REQ << endl;
+            cerr << "Failed to create request pipe at: " << PIPE_REQ << endl;
             return false;
         }
         cout << "Done" << endl;
 
-        cout << "Creating response pipe... " << flush;
+        cout << "IPCP: Creating response pipe... " << flush;
         if(mkfifo(PIPE_RES, PIPE_MODE) == -1 && errno != EEXIST)
         {
-            cerr << endl << "Failed to create response pipe at: " << PIPE_RES << endl;
+            cerr << "Failed to create response pipe at: " << PIPE_RES << endl;
+            IPCP::close();
             return false;
         }
         cout << "Done" << endl;
         // End: Create pipes
 
         // Start: Open pipes
-        cout << "Opening request pipe... " << flush;
+        cout << "IPCP: Opening request pipe... " << flush;
         req_pipe.open(PIPE_REQ);
         if(!req_pipe.is_open())
         {
-            cerr << endl << "Failed to open request pipe." << endl;
+            cerr << "Failed to open request pipe." << endl;
+            IPCP::close();
             return false;
         }
         cout << "Done" << endl;
 
-        cout << "Opening response pipe... " << flush;
+        cout << "IPCP: Opening response pipe... " << flush;
         res_pipe.open(PIPE_RES);
         if(!res_pipe.is_open())
         {
-            cerr << endl << "Failed to open response pipe." << endl;
+            cerr << "Failed to open response pipe." << endl;
+            IPCP::close();
             return false;
         }
         cout << "Done" << endl;
@@ -87,7 +94,7 @@ namespace IPCP
         res_pipe.close();
 
         // Start: Destroy pipes
-        cout << "Removing request pipe... " << flush;
+        cout << "IPCP: Removing request pipe... " << flush;
         try { filesystem::remove(PIPE_REQ); }
         catch(const filesystem::filesystem_error &err)
         {
@@ -96,7 +103,7 @@ namespace IPCP
         }
         cout << "Done" << endl;
 
-        cout << "Removing response pipe... " << flush;
+        cout << "IPCP: Removing response pipe... " << flush;
         try { filesystem::remove(PIPE_RES); }
         catch(const filesystem::filesystem_error &err)
         {
