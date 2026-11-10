@@ -45,7 +45,9 @@ class IPCPRequest
         GET=0,
         PUT=1,
         UPDATE=2,
-        DELETE=3
+        DELETE=3,
+        LOGIN=4,
+        LOGOUT=5
     };
 
     Type type;

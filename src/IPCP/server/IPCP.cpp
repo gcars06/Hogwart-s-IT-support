@@ -36,6 +36,8 @@ namespace IPCP
     // Prototypes
     bool init(void);
     void close(void);
+    IPCPRequest read(void);
+    void write(IPCPResponse&);
 
     ifstream req_pipe;
     ofstream res_pipe;
