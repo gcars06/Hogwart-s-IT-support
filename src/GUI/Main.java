@@ -49,6 +49,18 @@ public class Main extends Application {
         }
     }
 
+    private void changeImp(ActionEvent event) {
+        // Handle the action for the "Imperial" menu item
+        System.out.println("Imperial units selected.");
+        // Add your logic here to switch to Imperial units
+    }
+    private void changeMet(ActionEvent event) {
+        // Handle the action for the "Metric" menu item
+        System.out.println("Metric units selected.");
+        // Add your logic here to switch to Metric units
+    }
+
+
     private Parent loadView(String resource) throws IOException {
         var location = Main.class.getResource(resource);
         if (location == null) {
