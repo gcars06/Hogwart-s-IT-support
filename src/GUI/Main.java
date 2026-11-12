@@ -2,6 +2,7 @@ package GUI;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -36,6 +37,7 @@ public class Main extends Application {
             case "Daily" -> "DailyOverview.fxml";
             case "Weekly" -> "WeeklyOverview.fxml";
             case "Monthly" -> "MonthlyOverview.fxml";
+            case "Settings" -> "health_app_settings_page.fxml";
             default -> throw new IllegalArgumentException(
                     "No scene is configured for menu item: " + menuItem.getText());
         };

@@ -30,5 +30,9 @@ ARCHITECTURE: USER <-> UI <-> IPCP/Communication <-> Data Processing <-> Local D
 
 JAVA GUI:
 
-The JavaFX desktop UI is a standalone Maven project in `gui/`. See
-[`gui/README.md`](gui/README.md) for build and launch instructions.
+The JavaFX desktop UI, its FXML views, and Maven project are all in `src/GUI/`.
+From the repository root, build and launch it with:
+
+```shell
+mvn -f src/GUI/pom.xml clean javafx:run
+```
