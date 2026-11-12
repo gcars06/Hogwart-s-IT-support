@@ -128,6 +128,34 @@ bool Storage::save_steps(int user_id, const string& entry_date, int steps) {
     return result == SQLITE_DONE;
 }
 
+bool Storage::save_lap_time(int user_id, const string& entry_date, int seconds){
+    if(!initialized)
+        return false;
+const char* sql = R"(
+    INSERT INTO Fitness(user_id, entry_date, seconds)
+    VALUES (?,?,?)
+
+    ON CONFLICT(user_id, entry_date)
+    DO UPDATE SET seconds = COALESCE(Fitness.steps, 0) + excluded.steps;
+    )";
+
+sqlite3_stmt* statement = nullptr;
+
+int result = sqlite3_prepare_v2(db, sql, -1, &statement, nullptr);
+
+if(result != SQLITE_OK)
+    return false;
+
+sqlite3_bind_text(statement, 2, entry_date.c_str(), -1, SQLITE_TRANSIENT);
+
+sqlite3_bind_int(statemnet, 3, seconds);
+
+result = sqlite3_seconds(statement);
+
+sqlite3_finalize(statement);
+return result == SQLITE_DONE;
+}
+
 //Getter for steps 
 FitnessData Storage::get_fitness(int user_id, const string& entry_date){
     //checking to make sure the database was initialized
