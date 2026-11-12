@@ -32,9 +32,17 @@ class Storage {
         //preps the database
         bool initialize();
 
+        // ----------UserID----------
+        bool save_user_id(int user_id);
+        bool check_user_id(int user_id);
+
         // ----------FITNESS----------
         //saving the user steps
         bool save_steps(int user_id, const std::string& entry_date, int steps);
+        //Saving user lap times in seconds
+        bool save_lap_time(int user_id, const std::string& entry_date, int seconds);
+        //Saving user mile time in seconds
+        bool save_mile_time(int user_id, const std::string& entry_date, in seconds);
         //retrieves ALL user fitness data
         FitnessData get_fitness(int user_id, const std::string& entry_date);
         // ----------NUTRITION----------
