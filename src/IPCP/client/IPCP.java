@@ -1,3 +1,5 @@
+package IPCP.client;
+
 /**
 * IPCP - Inter-Process Communication Protocol
 *

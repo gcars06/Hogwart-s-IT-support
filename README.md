@@ -26,3 +26,9 @@ This project uses C++, Java, and Json. As we continue to develop this list may e
 
 
 ARCHITECTURE: USER <-> UI <-> IPCP/Communication <-> Data Processing <-> Local Data Storage
+
+
+JAVA GUI:
+
+The JavaFX desktop UI is a standalone Maven project in `gui/`. See
+[`gui/README.md`](gui/README.md) for build and launch instructions.
