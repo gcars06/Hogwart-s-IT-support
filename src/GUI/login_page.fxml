@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefHeight="1080.0" prefWidth="1920.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <MenuBar VBox.vgrow="NEVER">
+         <menus>
+            <Menu mnemonicParsing="false" text="Home">
+               <items>
+                  <MenuItem mnemonicParsing="false" onAction="#navigate" text="Home" />
+                  <MenuItem fx:id="DailyMenuButton" mnemonicParsing="false" onAction="#navigate" text="Daily" />
+                  <MenuItem fx:id="WeeklyMenuButton" mnemonicParsing="false" onAction="#navigate" text="Weekly" />
+                  <MenuItem fx:id="MonthlyMenuButton" mnemonicParsing="false" onAction="#navigate" text="Monthly" />
+                  <MenuItem fx:id="GoalsMenuButton" mnemonicParsing="false" text="Goals" />
+                  <MenuItem fx:id="SettingsMenuButton" mnemonicParsing="false" text="Settings" />
+               </items>
+            </Menu>
+         </menus>
+      </MenuBar>
+      <Label text="Health App Login">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <TextField fx:id="UsernameField" maxWidth="250.0" promptText="Username" />
+      <PasswordField fx:id="passwordField" maxWidth="250.0" promptText="Password" />
+      <Label fx:id="errorMessage" disable="true" text="Error Message" textFill="#ff0900" />
+      <Button fx:id="loginButtom" maxWidth="250.0" mnemonicParsing="false" text="Log in" />
+   </children>
+</VBox>
