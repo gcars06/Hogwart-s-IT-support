@@ -17,11 +17,11 @@ struct NutritionData {
     double fat;
 };
 //structure for Fitness to hold multiple variables
-struct FitnessData{
+struct FitnessData {
     int steps;
     int lap_time_seconds;
     int mile_time_seconds;
-}
+};
 
 class Storage { 
     public:
@@ -42,19 +42,19 @@ class Storage {
         //Saving user lap times in seconds
         bool save_lap_time(int user_id, const std::string& entry_date, int seconds);
         //Saving user mile time in seconds
-        bool save_mile_time(int user_id, const std::string& entry_date, in seconds);
+        bool save_mile_time(int user_id, const std::string& entry_date, int seconds);
         //retrieves ALL user fitness data
         FitnessData get_fitness(int user_id, const std::string& entry_date);
         // ----------NUTRITION----------
         //saves nutrition facts
-        bool save_nutrition( int user_id, const std::string& entry_date, double calories, double protein, double carbs, double fat);
+        bool save_nutrition(int user_id, const std::string& entry_date, double calories, double protein, double carbs, double fat);
         //retreives ALL user nutrition facts 
         NutritionData get_nutrition(int user_id, const std::string& entry_date);
         // ----------SLEEP----------
         //saving hours slept
         bool save_hours_slept(int user_id, const std::string& entry_date, double hours_slept);
         //retrieves hours slept
-        double get_hours_slept( int user_id, const std::string& entry_date);
+        double get_hours_slept(int user_id, const std::string& entry_date);
         // ----------GOALS----------
         //saving goals 
         bool save_goal(int user_id, const std::string& goal_text);
@@ -62,9 +62,9 @@ class Storage {
         std::vector<std::string> get_goals(int user_id);
 
 
-        private:
-            sqlite3* db;
-            bool initialized;
+    private:
+        sqlite3* db;
+        bool initialized;
 };
 
 #endif
