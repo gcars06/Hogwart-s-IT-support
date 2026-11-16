@@ -2,7 +2,7 @@
 * IPCP - Inter-Process Communication Protocol
 *
 * When IPCP::read() is called, it reads the protocol header (containing the
-* type and userID), then passes that header, as a byte array, to the
+* version, type, and userID), then passes that header, as a byte array, to the
 * constructor. It also passes the request pipe stream, so we can decode the
 * string containing the JSON body.
 *
@@ -11,26 +11,26 @@
 *     if(req.type == IPCPRequest::GET) {...}
 *
 * @see IPCP.cpp
+* @see IPCP.hpp
 * @see IPCPResponse.cpp
 * @author Lukas Lynch
 */
-#include <cstdint>
-#include <cstring>
 #include <string>
+#include <cstdint>
+#include <cstdlib>
 
-#include <arpa/inet.h> // For ntohl
+#include <arpa/inet.h>
 #include <fstream>
 
 #include <nlohmann/json.hpp>
-
-using namespace std;
-using json = nlohmann::json;
+using json_t = nlohmann::json;
 
 /**
 * Attributes:
-*   - type: enum Type(uint8_t)
+*   - version: int8_t
+*   - type: Type(int8_t)
 *   - userID: int32_t
-*   - body: json
+*   - body: json_t
 *
 * Methods:
 *   - N/A
@@ -38,9 +38,7 @@ using json = nlohmann::json;
 class IPCPRequest
 {
     public:
-    const static size_t header_size = sizeof(uint8_t) + sizeof(int32_t);
-    
-    enum Type: uint8_t
+    enum Type: int8_t
     {
         GET=0,
         PUT=1,
@@ -49,50 +47,42 @@ class IPCPRequest
         LOGIN=4,
         LOGOUT=5
     };
-
+    
+    // Header
+    int8_t version;
     Type type;
     int32_t userID;
-    json body;
+    const static size_t header_size =
+        sizeof(version) +
+        sizeof(type) +
+        sizeof(userID);
 
-    IPCPRequest(const char header[header_size], ifstream * req_pipe)
+    // Body
+    json_t body;
+
+    IPCPRequest(char header[header_size], std::ifstream * req_pipe)
     {
-        // We'll use this to step through the buffer without mutating it.
-        const char * headerp = header;
-    
-        this->type = (Type) *(uint8_t*) headerp;
-        headerp += sizeof(Type);
-
-        // Use ntohl to convert big-endian to the system's endianness.
-        this->userID = ntohl(*(int32_t*) headerp);
-        headerp += sizeof(int32_t);
-
-        this->body = decode_json(req_pipe);
+        this->version = *(int8_t*) header++;
+        this->type = (Type) *(int8_t*) header++;
+        this->userID = ntohl(*(int32_t*) header); // Convert big-endian to system's endianness
+        this->body = deserialize(req_pipe);
     } // IPCPRequest()
 
-    /**
-    * JSON objects are encoded as strings when sent through the pipes. The
-    * strings are prepended with their length (int32_t).
-    */
     private:
-    static json
-    decode_json(ifstream * req_pipe)
+    static json_t
+    deserialize(std::ifstream * req_pipe)
     {
-        /*
-        * Reads 4 bytes from pipe, which should contain a 32-bit integer
-        * denoting the length of the string. Convert from big-endian to
-        * the system's endianness.
-        */
         char len_buf[sizeof(int32_t)];
-        req_pipe->read(len_buf, sizeof(int32_t));
-        const int32_t len = ntohl(*(int32_t*) len_buf);
+        (void) req_pipe->read(len_buf, sizeof(len_buf));
+        int32_t len = ntohl(*(int32_t*) len_buf); // Convert big-endian to system's endianness
+        if(!len)
+            return json_t::object(); // Empty object
 
-        if(len == 0)
-            return json::object(); // Empty object
+        char * json_s = (char*) calloc(len + 1, sizeof(char)); // json_s(erialized)
+        (void) req_pipe->read(json_s, len);
+        json_t obj = json_t::parse(json_s);
+        free(json_s);
 
-        char str_buf[len];
-        req_pipe->read(str_buf, len);
-        const string str(str_buf, len);
-
-        return json::parse(str);
-    } // json decode_json()
+        return obj;
+    } // json_t deserialize()
 };

@@ -7,37 +7,37 @@
 * object from which useful data can be extracted.
 *
 * Example:
-*     IPCPResponse res(IPCPResponse::OK, "All is well!");
+*     IPCPResponse res(1, IPCPResponse::OK, R"({"message": "All is well!"})"_json);
 *     IPCP::write(res);
 *
 * @see IPCP.cpp
+* @see IPCP.hpp
 * @see IPCPRequest.cpp
 * @author Lukas Lynch
 */
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-
 #include <string>
 #include <vector>
+#include <cstdint>
+#include <cstring>
+
+#include <arpa/inet.h>
 
 #include <nlohmann/json.hpp>
-
-using namespace std;
-using json = nlohmann::json;
+using json_t = nlohmann::json;
 
 /**
 * Attributes:
-*   - code: enum StatusCode(uint8_t)
-*   - body: json
+*   - version: int8_t
+*   - status: StatusCode(int8_t)
+*   - body: json_t
 *
 * Methods:
-*   - to_bytes(): vector<uint8_t>
+*   - to_bytes(): vector<char>
 */
 class IPCPResponse
 {
     public:
-    enum StatusCode: uint8_t
+    enum StatusCode: int8_t
     {
         OK=0,
         OK_NO_CONTENT=1,
@@ -45,50 +45,47 @@ class IPCPResponse
         USER_NOT_FOUND=3,
         DATA_NOT_FOUND=4,
         SERVER_ERROR=5,
-        BAD_RESPONSE=6
+        BAD_RESPONSE=6,
+        UNSUPPORTED_VERSION=7
     };
 
-    StatusCode code;
-    json body;
+    // Header
+    int8_t version;
+    StatusCode status;
+    const static size_t header_size =
+        sizeof(version) +
+        sizeof(status);
 
-    IPCPResponse(const StatusCode c=BAD_RESPONSE, const json & j=json::object()): code(c), body(j) {}
-    IPCPResponse(const StatusCode c, const string & b=""): IPCPResponse(c, json::parse(b)) {}
+    // Body
+    json_t body;
 
-    vector<uint8_t>
+    IPCPResponse(
+        const int8_t v,
+        const StatusCode s=BAD_RESPONSE,
+        const json_t & b=json_t::object()
+    ): version(v), status(s), body(b) {}
+
+    std::vector<char>
     to_bytes(void)
     {
-        vector<uint8_t> buf;
-        string body_s = this->body.dump(); // body_s(erialized)
-        buf.reserve(sizeof(uint8_t) + sizeof(int32_t) + body_s.size());
+        const std::string body_s = this->body.empty() ? std::string() : this->body.dump(); // body_s(erialized)
+        const int32_t body_len = htonl(body_s.size()); // Network byte order
 
-        // Status code
-        buf.push_back(code);
+        std::vector<char> buf(header_size + sizeof(body_len) + body_s.size());
 
-        if(body_s.size() == 0)
-        {
-            // Client will expect 4 bytes
-            buf.push_back(0);
-            buf.push_back(0);
-            buf.push_back(0);
-            buf.push_back(0);
-            return buf;
-        }
-
-        // Body length
-        // Break up into individual bytes and convert to big-endian.
-        uint32_t len = static_cast<uint32_t>(body_s.size());
-        buf.push_back(static_cast<uint8_t> ((len >> 24) & 0xFF));
-        buf.push_back(static_cast<uint8_t> ((len >> 16) & 0xFF));
-        buf.push_back(static_cast<uint8_t> ((len >>  8) & 0xFF));
-        buf.push_back(static_cast<uint8_t> ( len        & 0xFF));
-
-        // Body
-        buf.insert
-        (
-            buf.end(),
-            body_s.begin(),
-            body_s.end()
+        buf[0] = this->version;
+        buf[1] = this->status;
+        (void) memcpy( // Append body length
+            buf.data() + header_size,
+            &body_len,
+            sizeof(body_len)
         );
+        (void) memcpy( // Append body
+            buf.data() + header_size + sizeof(body_len),
+            body_s.data(),
+            body_s.size()
+        );
+
         return buf;
-    } // vector to_bytes()
+    } // vector<char> to_bytes()
 };

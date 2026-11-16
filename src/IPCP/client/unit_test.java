@@ -20,12 +20,13 @@ class unit_test
         System.out.println("=== Sending request to server ===");
         IPCPRequest req = new IPCPRequest
         (
+            (byte) 1,                // version
             IPCPRequest.Type.UPDATE, // type
             12345,                   // userID
             out_body                 // body
         );
         IPCPResponse res = IPCP.send(req);
-        System.out.printf("Response:%n-Code: %s%n-Body: %s%n", res.code, res.body.toString());
+        System.out.printf("Response:%n-Version: %d%n-Status: %s%n-Body: %s%n", res.version, res.status, res.body.toString());
         System.out.println("=== Success ===\n");
 
         System.out.println("=== Closing pipes ===");

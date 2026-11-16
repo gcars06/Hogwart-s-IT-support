@@ -1,48 +1,43 @@
 # IPCP - Inter-Process Communication Protocol
-This is a wire protocol to allow the Java frontend to communicate with the C++ backend.
+This is a wire protocol to dictate communication between the Java frontend and the C++ backend. This protocol uses network byte order, so multi-byte integers are big-endian.
 
-## Basic usage - Java
-```java
-import org.java.JSONObject;
+## IPCPRequest packet envelope:
++---------+------+-----------+
+|        1|     1|          4|-Bytes
++---------+------+-----------+
+| version | type |    userID |-Header
++---------+------+-----------+
+| body_len(i32) + body(json) |
++----------------------------+
 
-IPCP.init(); // Returns true on success, false on failure
+## IPCPResponse packet envelope:
++---------+------------------+
+|        1|                 1|-Bytes
++---------+------------------+
+| version |           status |-Header
++---------+------------------+
+| body_len(i32) + body(json) |
++----------------------------+
 
-IPCPRequest req = new IPCPRequest(
-    IPCPRequest.Type.GET,     // type
-    12345,                    // userID
-    "{\"field\": \"login\"}"  // body (JSON structure not determined yet; you can also pass a JSONObject instead of a string)
-);
-
-IPCPResponse res = IPCP.send(req);
-JSONObject res_body = new JSONObject(res.body);
-System.out.println("Response code: " + res.code);
-System.out.println("Response: " + res_body.toString());
-
-IPCP.close();
-```
-
-## Basic usage - C++
-```cpp
-#include "path/to/IPCP.cpp"
-#include <nlohmann/json>
-
-IPCP::init(); // Returns true on success, false on failure
-
-IPCPRequest req = IPCP::read();
-cout << "Request type: " << static_cast<int>(req.type) << endl;
-cout << "Request: " << req.body.dump(4) << endl; // dump(n); n=# of spaces for indentations
-
-IPCPResponse res(OK_NO_CONTENT);
-IPCP::write(res);
-
-IPCP::close();
-```
-
-## Parameters - IPCPRequest
-- **type** - The type of request: (GET, PUT, UPDATE, DELETE)
-- **userID** - The userID of the relevant user
-- **body** - JSON object detailing requested data; structure not determined yet
-
-## Parameters - IPCPResponse
-- **code** - Status code from server: (OK, OK_NO_CONTENT, BAD_REQUEST, USER_NOT_FOUND, DATA_NOT_FOUND, SERVER_ERROR, BAD_RESPONSE)
-- **body** - JSON object containing requested data; structure not determined yet
+## Example sequence
++----------+   +------+             +---------+
+| Frontend |   | IPCP |             | Backend |
++----------+   +------+             +---------+
+     ||           ||                    ||
+     ||Login      ||                    ||
+     ||==========>||                    ||
+     ||userID     ||IPCPRequest         ||
+     ||---------->||===================>||
+     ||           ||type:LOGIN          ||
+     ||           ||userID              ||
+     ||           ||body:{}             ||
+     ||           ||------------------->||
+     ||           ||                    ||
+     ||           ||        IPCPResponse||
+     ||           ||<===================||
+     ||           ||status:OK_NO_CONTENT||
+     ||           ||             body:{}||
+     ||  Logged in||<-------------------||
+     ||<==========||
+     ||
+     \/
