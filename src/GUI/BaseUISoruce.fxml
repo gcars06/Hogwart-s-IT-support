@@ -141,7 +141,7 @@
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
               </content>
             </TitledPane>
-            <Button fx:id="SettingsBareButton" layoutX="960.0" layoutY="527.0" mnemonicParsing="false" onAction="#navigate" prefHeight="81.0" prefWidth="205.0" text="Settings" textAlignment="CENTER">
+            <Button fx:id="SettingsBareButton" layoutX="960.0" layoutY="527.0" mnemonicParsing="false" onAction="#openSettings" prefHeight="81.0" prefWidth="205.0" text="Settings" textAlignment="CENTER">
                <font>
                   <Font size="32.0" />
                </font>

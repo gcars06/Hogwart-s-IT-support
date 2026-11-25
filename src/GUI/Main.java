@@ -42,6 +42,15 @@ public class Main extends Application {
                     "No scene is configured for menu item: " + menuItem.getText());
         };
 
+        showView(view);
+    }
+
+    @FXML
+    private void openSettings() {
+        showView("health_app_settings_page.fxml");
+    }
+
+    private void showView(String view) {
         try {
             window.getScene().setRoot(loadView(view));
         } catch (IOException e) {
@@ -49,11 +58,13 @@ public class Main extends Application {
         }
     }
 
+    @FXML
     private void changeImp(ActionEvent event) {
         // Handle the action for the "Imperial" menu item
         System.out.println("Imperial units selected.");
         // Add your logic here to switch to Imperial units
     }
+    @FXML
     private void changeMet(ActionEvent event) {
         // Handle the action for the "Metric" menu item
         System.out.println("Metric units selected.");
