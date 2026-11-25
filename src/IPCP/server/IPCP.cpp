@@ -9,6 +9,7 @@
 * construct/return an IPCPRequest object. To send a response, we must create
 * an IPCPResponse object, and send that with IPCP::write().
 *
+* @see IPCP.hpp
 * @see IPCPRequest.cpp
 * @see IPCPResponse.cpp
 * @author Lukas Lynch
@@ -22,14 +23,12 @@
 #include <filesystem>
 #include <fstream>
 
-using namespace std;
+#include "IPCPRequest.cpp"
+#include "IPCPResponse.cpp"
 
 #define PIPE_REQ "/tmp/com.hogwarts.health.req"
 #define PIPE_RES "/tmp/com.hogwarts.health.res"
 #define PIPE_MODE (S_IRUSR | S_IWUSR) // file mode 600
-
-#include "IPCPRequest.cpp"
-#include "IPCPResponse.cpp"
 
 namespace IPCP
 {
@@ -39,51 +38,43 @@ namespace IPCP
     IPCPRequest read(void);
     void write(IPCPResponse&);
 
-    ifstream req_pipe;
-    ofstream res_pipe;
+    std::ifstream req_pipe;
+    std::ofstream res_pipe;
 
     bool
     init(void)
     {
         // Start: Create pipes
-        cout << "IPCP: Creating request pipe... " << flush;
         if(mkfifo(PIPE_REQ, PIPE_MODE) == -1 && errno != EEXIST)
         {
-            cerr << "Failed to create request pipe at: " << PIPE_REQ << endl;
+            std::cerr << "IPCP: Failed to create request pipe at: " << PIPE_REQ << std::endl;
             return false;
         }
-        cout << "Done" << endl;
 
-        cout << "IPCP: Creating response pipe... " << flush;
         if(mkfifo(PIPE_RES, PIPE_MODE) == -1 && errno != EEXIST)
         {
-            cerr << "Failed to create response pipe at: " << PIPE_RES << endl;
+            std::cerr << "IPCP: Failed to create response pipe at: " << PIPE_RES << std::endl;
             IPCP::close();
             return false;
         }
-        cout << "Done" << endl;
         // End: Create pipes
 
         // Start: Open pipes
-        cout << "IPCP: Opening request pipe... " << flush;
         req_pipe.open(PIPE_REQ);
         if(!req_pipe.is_open())
         {
-            cerr << "Failed to open request pipe." << endl;
+            std::cerr << "IPCP: Failed to open request pipe." << std::endl;
             IPCP::close();
             return false;
         }
-        cout << "Done" << endl;
 
-        cout << "IPCP: Opening response pipe... " << flush;
         res_pipe.open(PIPE_RES);
         if(!res_pipe.is_open())
         {
-            cerr << "Failed to open response pipe." << endl;
+            std::cerr << "IPCP: Failed to open response pipe." << std::endl;
             IPCP::close();
             return false;
         }
-        cout << "Done" << endl;
         // End: Open pipes
 
         return true;
@@ -95,25 +86,19 @@ namespace IPCP
         req_pipe.close();
         res_pipe.close();
 
-        // Start: Destroy pipes
-        cout << "IPCP: Removing request pipe... " << flush;
-        try { filesystem::remove(PIPE_REQ); }
-        catch(const filesystem::filesystem_error &err)
+        try { std::filesystem::remove(PIPE_REQ); }
+        catch(const std::filesystem::filesystem_error &err)
         {
-            cerr << endl << "Failed to remove request pipe at: " << PIPE_REQ << endl <<
-            "Error: " << err.what() << endl;
+            std::cerr << "IPCP: Failed to remove request pipe at: " << PIPE_REQ << std::endl <<
+            "Error: " << err.what() << std::endl;
         }
-        cout << "Done" << endl;
 
-        cout << "IPCP: Removing response pipe... " << flush;
-        try { filesystem::remove(PIPE_RES); }
-        catch(const filesystem::filesystem_error &err)
+        try { std::filesystem::remove(PIPE_RES); }
+        catch(const std::filesystem::filesystem_error &err)
         {
-            cerr << endl << "Failed to remove response pipe at: " << PIPE_RES << endl <<
-            "Error: " << err.what() << endl;
+            std::cerr << "IPCP: Failed to remove response pipe at: " << PIPE_RES << std::endl <<
+            "Error: " << err.what() << std::endl;
         }
-        cout << "Done" << endl;
-        // End: Destroy pipes
     } // void close()
 
     IPCPRequest
@@ -129,9 +114,9 @@ namespace IPCP
     void
     write(IPCPResponse & res)
     {
-        vector<uint8_t> bytes = res.to_bytes();
+        std::vector<char> bytes = res.to_bytes();
 
-        res_pipe.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+        res_pipe.write(bytes.data(), bytes.size());
         res_pipe.flush();
     } // void write()
 }

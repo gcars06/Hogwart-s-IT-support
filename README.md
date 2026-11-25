@@ -26,3 +26,13 @@ This project uses C++, Java, and Json. As we continue to develop this list may e
 
 
 ARCHITECTURE: USER <-> UI <-> IPCP/Communication <-> Data Processing <-> Local Data Storage
+
+
+JAVA GUI:
+
+The JavaFX desktop UI, its FXML views, and Maven project are all in `src/GUI/`.
+From the repository root, build and launch it with:
+
+```shell
+mvn -f src/GUI/pom.xml clean javafx:run
+```

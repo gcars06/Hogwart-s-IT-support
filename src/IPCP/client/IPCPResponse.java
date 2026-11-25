@@ -1,3 +1,5 @@
+package IPCP.client;
+
 /**
 * IPCP - Inter-Process Communication Protocol
 *
@@ -8,13 +10,13 @@
 * @see IPCPRequest.java
 * @author Lukas Lynch
 */
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import org.json.JSONObject;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
 * Attributes:
+*   - version: byte
 *   - code: enum StatusCode
 *   - body: JSONObject
 *
@@ -25,51 +27,62 @@ class IPCPResponse
 {
     public enum StatusCode
     {
-        OK,             // 0
-        OK_NO_CONTENT,  // 1
-        BAD_REQUEST,    // 2
-        USER_NOT_FOUND, // 3
-        DATA_NOT_FOUND, // 4
-        SERVER_ERROR,   // 5
-        BAD_RESPONSE    // 6
+        OK,                 // 0
+        OK_NO_CONENT,       // 1
+        BAD_REQUEST,        // 2
+        USER_NOT_FOUND,     // 3
+        DATA_NOT_FOUND,     // 4
+        SERVER_ERROR,       // 5
+        BAD_RESPONSE,       // 6
+        UNSUPPORTED_VERSION // 7
     }
-    public static final StatusCode[] statuses = StatusCode.values();
 
-    public StatusCode code;
+    // Header
+    public byte version;
+    public StatusCode status;
+    public static final int header_size = 1 + 1;
+
+    // Body
     public JSONObject body;
 
-    public IPCPResponse(InputStream in)
+    private static final int INT_SIZE = 4;
+    private static final StatusCode[] statuses = StatusCode.values();
+    public IPCPResponse(byte[] header, InputStream res_pipe)
     {
         try
         {
-            // Next free position in header buffer
-            int headerp = 0;
-
-            // 1=StatusCode, 4=Body length
-            byte[] header = new byte[1 + 4];
-            in.read(header, headerp, header.length);
-    
-            // First byte from server should contain code.
-            this.code = statuses[header[headerp++]];
-
-            // Next 4 bytes are the message's length.
-            int bodyLength = ByteBuffer.wrap(header, headerp, 4).getInt();
-            headerp += 4;
-
-            byte[] body_s = new byte[bodyLength]; // body_s(erial)
-            in.read(body_s, 0, bodyLength);
-            body = new JSONObject(new String
-            (
-                body_s,                // Data buffer to read from
-                0,                     // Position of body in data buffer
-                bodyLength,            // Length of body
-                StandardCharsets.UTF_8 // Charset - UTF-8
-            ));
+            this.version = header[0];
+            this.status = statuses[header[1]];
+            this.body = deserialize(res_pipe);
         }
         catch(Exception _ignored)
         {
-            this.code = StatusCode.BAD_RESPONSE;
+            this.status = StatusCode.BAD_RESPONSE;
             this.body = new JSONObject("{\"message\": \"Bad response from server.\"}");
         }
-    } // IPCPResponse
+    } // IPCPResponse()
+
+    private static JSONObject
+    deserialize(InputStream res_pipe) throws Exception
+    {
+        byte[] len_buf = new byte[INT_SIZE];
+        res_pipe.read(len_buf, /*offset=*/0, INT_SIZE);
+        int len = ((len_buf[0] & 0xFF) << 24) | // MSB
+                  ((len_buf[1] & 0xFF) << 16) |
+                  ((len_buf[2] & 0xFF) <<  8) |
+                   (len_buf[3] & 0xFF);         // LSB
+
+        if(len == 0)
+            return new JSONObject("{}");
+
+        byte[] body_s = new byte[len]; // body_s(erialized)
+        res_pipe.read(body_s, /*offset=*/0, len);
+        return new JSONObject(new String
+        (
+            /*source=*/body_s,
+            /*offset=*/0,
+            /*length=*/len,
+            /*charset=*/StandardCharsets.UTF_8
+        ));
+    } // JSONObject deserialize()
 }

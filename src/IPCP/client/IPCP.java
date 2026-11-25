@@ -1,3 +1,5 @@
+package IPCP.client;
+
 /**
 * IPCP - Inter-Process Communication Protocol
 *
@@ -40,25 +42,20 @@ public class IPCP
         File pipe_in = new File(PIPE_RES);
         if(!pipe_out.exists() || !pipe_in.exists())
         {
-            System.err.println("Failed to initialize IPCP.\nPipes don't exist; make sure server is running.");
+            System.err.println("IPCP: Failed to initialize IPCP.\nPipes don't exist; make sure server is running.");
             return false;
         }
 
         try
         {
-            System.out.print("Connecting to request pipe... ");
             out = new FileOutputStream(PIPE_REQ);
-            System.out.println("Done");
-
-            System.out.print("Connecting to response pipe... ");
             in = new FileInputStream(PIPE_RES);
-            System.out.println("Done");
 
             return true;
         }
         catch(IOException e)
         {
-            System.err.printf("%nFailed to initialize IPCP.%n%s%n", e);
+            System.err.printf("IPCP: Failed to initialize IPCP.%n%s%n", e);
             close();
             return false;
         }
@@ -66,13 +63,8 @@ public class IPCP
 
     public static void close()
     {
-        System.out.print("Closing request pipe... ");
         try { if(out != null) out.close(); } catch(IOException _ignored) {}
-        System.out.println("Done"); 
-
-        System.out.print("Closing response pipe... ");
         try { if(in != null) in.close(); } catch(IOException _ignored) {}
-        System.out.println("Done");
 
         out = null;
         in = null;
@@ -83,6 +75,8 @@ public class IPCP
         out.write(req.getBytes());
         out.flush();
 
-        return new IPCPResponse(in);
+        byte[] res_header = new byte[IPCPResponse.header_size];
+        in.read(res_header, /*offset=*/0, IPCPResponse.header_size);
+        return new IPCPResponse(res_header, in);
     } // IPCPResonse send()
 }

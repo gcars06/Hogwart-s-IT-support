@@ -2,6 +2,7 @@ package GUI;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -36,16 +37,40 @@ public class Main extends Application {
             case "Daily" -> "DailyOverview.fxml";
             case "Weekly" -> "WeeklyOverview.fxml";
             case "Monthly" -> "MonthlyOverview.fxml";
+            case "Settings" -> "health_app_settings_page.fxml";
             default -> throw new IllegalArgumentException(
                     "No scene is configured for menu item: " + menuItem.getText());
         };
 
+        showView(view);
+    }
+
+    @FXML
+    private void openSettings() {
+        showView("health_app_settings_page.fxml");
+    }
+
+    private void showView(String view) {
         try {
             window.getScene().setRoot(loadView(view));
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to load scene: " + view, e);
         }
     }
+
+    @FXML
+    private void changeImp(ActionEvent event) {
+        // Handle the action for the "Imperial" menu item
+        System.out.println("Imperial units selected.");
+        // Add your logic here to switch to Imperial units
+    }
+    @FXML
+    private void changeMet(ActionEvent event) {
+        // Handle the action for the "Metric" menu item
+        System.out.println("Metric units selected.");
+        // Add your logic here to switch to Metric units
+    }
+
 
     private Parent loadView(String resource) throws IOException {
         var location = Main.class.getResource(resource);

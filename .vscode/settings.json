@@ -1,14 +1,19 @@
 {
-    "cmake.sourceDirectory": "/home/gcars06/Desktop/CSC 131/Hogwart-s-IT-support/lib/json-cpp",
-    "java.debug.settings.onBuildFailureProceed": true,
+    "java.project.sourcePaths": [
+        "src"
+    ],
+    "java.project.referencedLibraries": [
+        "/home/gcars06/Desktop/CSC 131/Hogwart-s-IT-support-main/lib/json-java/json.jar"
+    ],
     "java.configuration.runtimes": [
         {
             "name": "JavaSE-25",
-            "path": "/usr/lib/jvm/zulu-jre25-fx",
+            "path": "/usr/lib/jvm/java-25-openjdk",
             "default": true
         }
     ],
-    "java.project.referencedLibraries": [
-        "lib/json-java/json.jar"
-    ]
+    "terminal.integrated.env.linux": {
+        "JAVA_HOME": "/usr/lib/jvm/java-25-openjdk",
+        "PATH": "/usr/lib/jvm/java-25-openjdk/bin:${env:PATH}"
+    }
 }
