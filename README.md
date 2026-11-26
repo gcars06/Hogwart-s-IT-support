@@ -36,3 +36,5 @@ From the repository root, build and launch it with:
 ```shell
 mvn -f src/GUI/pom.xml clean javafx:run
 ```
+
+The Java modules target Java 25. Build the IPCP client and native test server from `src/IPCP/` with `make`; the Java compilation is pinned to the Java 25 API via `--release 25`.
