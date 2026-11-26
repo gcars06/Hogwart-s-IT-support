@@ -54,7 +54,6 @@ namespace IPCP
         if(mkfifo(PIPE_RES, PIPE_MODE) == -1 && errno != EEXIST)
         {
             std::cerr << "IPCP: Failed to create response pipe at: " << PIPE_RES << std::endl;
-            IPCP::close();
             return false;
         }
         // End: Create pipes
@@ -64,7 +63,6 @@ namespace IPCP
         if(!req_pipe.is_open())
         {
             std::cerr << "IPCP: Failed to open request pipe." << std::endl;
-            IPCP::close();
             return false;
         }
 
@@ -72,7 +70,6 @@ namespace IPCP
         if(!res_pipe.is_open())
         {
             std::cerr << "IPCP: Failed to open response pipe." << std::endl;
-            IPCP::close();
             return false;
         }
         // End: Open pipes
