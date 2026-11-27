@@ -311,7 +311,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="dailyStepsGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 steps" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="dailyStepsGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 / 0 steps" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
@@ -327,7 +327,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="dailyWaterGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 L" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="dailyWaterGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 / 0.0 L" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
@@ -343,7 +343,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="dailyCaloriesGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 kcal" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="dailyCaloriesGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 / 0 kcal" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
@@ -359,7 +359,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="dailySleepGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 h" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="dailySleepGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 / 0.0 h" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
@@ -395,7 +395,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="weeklyStepsGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 steps" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="weeklyStepsGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 / 0 steps" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
@@ -411,7 +411,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="weeklyWaterGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 L" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="weeklyWaterGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 / 0.0 L" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
@@ -427,7 +427,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="weeklyCaloriesGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 kcal" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="weeklyCaloriesGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 / 0 kcal" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
@@ -443,7 +443,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="weeklySleepGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 h" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="weeklySleepGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 / 0.0 h" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
@@ -479,7 +479,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="monthlyStepsGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 steps" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="monthlyStepsGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 / 0 steps" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
@@ -495,7 +495,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="monthlyWaterGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 L" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="monthlyWaterGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 / 0.0 L" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
@@ -511,7 +511,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="monthlyCaloriesGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 kcal" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="monthlyCaloriesGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0 / 0 kcal" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
@@ -527,7 +527,7 @@
                                              <content>
                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                    <children>
-                                                      <Label fx:id="monthlySleepGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 h" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                                      <Label fx:id="monthlySleepGoalValue" alignment="CENTER" layoutY="55.0" prefHeight="40.0" text="0.0 / 0.0 h" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                          <font>
                                                             <Font size="16.0" />
                                                          </font>
