@@ -1,27 +1,58 @@
+/**
+* This is the core of the backend server, which will receive and process
+* IPCPRequests from the frontend, interface with the database, then respond
+* by sending back an IPCPResponse object.
+*
+* The program will spawned by the Java process, and will only terminate when
+* it receives a SIGTERM signal (see util::term).
+*
+* @see account.cpp
+* @see util.cpp
+* @author Lukas Lynch
+*/
+// Includes
 #include <cstdint>
-#include <cstdlib>
+#include <csignal>
 
 #include "../IPCP/server/IPCP.hpp"
 #include "../Storage/storage.cpp"
+#include "account.cpp"
+#include "util.cpp"
 
+#include <nlohmann/json.hpp>
+
+// Definitions
 #define STORAGE_UNINITIALIZED -1
 #define STORAGE_SQLITEERROR   -2
 #define STORAGE_PLACEHOLDER   -3
 
-#include <nlohmann/json.hpp>
-using json_t = nlohmann::json;
-
 using namespace std;
+using json_t = nlohmann::json;
 using enum IPCPRequest::Type;
 using enum IPCPResponse::StatusCode;
 
-#define GLOBAL
+// Global variables
+#define GLOBAL // This is just eye candy
 GLOBAL Storage storage;
 GLOBAL bool userID_valid = false;
 
 IPCPResponse
 fetch(const int32_t userID, const string * entry_date)
 {
+    // Equivalent to a nested function
+    auto err = [](const string & type)
+    {
+        const string msg = R"({"message": "Failed to retrieve )" + type + R"( data"})";
+    
+        return IPCPResponse(
+            /*version=*/IPCP_VERSION,
+            /*status=*/DATA_NOT_FOUND,
+            /*body=*/msg
+        );
+    };
+
+    // ===================================================================== //
+
     json_t body = json_t::object();
     NutritionData n_data = storage.get_nutrition(userID, *entry_date);
     FitnessData f_data = storage.get_fitness(userID, *entry_date);
@@ -32,15 +63,15 @@ fetch(const int32_t userID, const string * entry_date)
     if((n_data.calories < 0 && n_data.calories != STORAGE_PLACEHOLDER) ||
       (n_data.protein < 0 && n_data.protein != STORAGE_PLACEHOLDER) ||
       (n_data.carbs < 0 && n_data.carbs != STORAGE_PLACEHOLDER) ||
-      (n_data.fat < 0 && n_data.fat != STORAGE_PLACEHOLDER)) goto fetch_bad_n;
+      (n_data.fat < 0 && n_data.fat != STORAGE_PLACEHOLDER)) return err("nutrition");
 
     // Check FitnessData; -3 is placeholder value
     if((f_data.steps < 0 && f_data.steps != STORAGE_PLACEHOLDER) ||
       (f_data.lap_time_seconds < 0 && f_data.lap_time_seconds != STORAGE_PLACEHOLDER) ||
-      (f_data.mile_time_seconds < 0 && f_data.mile_time_seconds != STORAGE_PLACEHOLDER)) goto fetch_bad_f;
+      (f_data.mile_time_seconds < 0 && f_data.mile_time_seconds != STORAGE_PLACEHOLDER)) return err("fitness");
 
     // Check hours slept; -3 is placeholder value
-    if(hours_slept < 0 && hours_slept != STORAGE_PLACEHOLDER) goto fetch_bad_s;
+    if(hours_slept < 0 && hours_slept != STORAGE_PLACEHOLDER) return err("sleep");
 
     // Put all into JSON body
     body["nutritionData"] = {
@@ -60,30 +91,9 @@ fetch(const int32_t userID, const string * entry_date)
         body["goals"].push_back(goal);
 
     return IPCPResponse(
-        /*version=*/1,
+        /*version=*/IPCP_VERSION,
         /*status=*/OK,
         /*body=*/body
-    );
-
-    // ===================================================================== //
-
-    fetch_bad_n:
-    return IPCPResponse(
-        /*version=*/1,
-        /*status=*/DATA_NOT_FOUND,
-        /*body=*/R"({"message": "Failed to retrieve nutrition data"})"_json
-    );
-    fetch_bad_f:
-    return IPCPResponse(
-        /*version=*/1,
-        /*status=*/DATA_NOT_FOUND,
-        /*body=*/R"({"message": "Failed to retrieve fitness data"})"_json
-    );
-    fetch_bad_s:
-    return IPCPResponse(
-        /*version=*/1,
-        /*status=*/DATA_NOT_FOUND,
-        /*body=*/R"({"message": "Failed to retrieve sleep data"})"_json
     );
 } // IPCPResponse fetch()
 
@@ -93,7 +103,7 @@ fetch_wrapper(const IPCPRequest & req)
     if(GLOBAL userID_valid)
     {
         return IPCPResponse(
-            /*version=*/1,
+            /*version=*/IPCP_VERSION,
             /*status=*/USER_NOT_FOUND,
             /*body=*/R"({"message": "Invalid userID provided"})"_json
         );
@@ -103,7 +113,7 @@ fetch_wrapper(const IPCPRequest & req)
     if(!entry_date)
     {
         return IPCPResponse(
-            /*version=*/1,
+            /*version=*/IPCP_VERSION,
             /*status=*/BAD_REQUEST,
             /*body=*/R"({"message": "No entryDate specified in request"})"_json
         );
@@ -113,41 +123,87 @@ fetch_wrapper(const IPCPRequest & req)
 } // IPCPResponse fetch_wrapper()
 
 IPCPResponse
-login(const IPCPRequest & req)
+put(const int32_t userID, const string * entry_date, const json_t & body)
 {
-    if(!storage.check_user_id(req.userID))
+    // Equivalent to a nested function
+    auto err = [](const string & type)
+    {
+        const string msg = R"({"message": "Failed to upload )" + type + R"( data to the database"})";
+    
+        return IPCPResponse(
+            /*version=*/IPCP_VERSION,
+            /*status=*/SERVER_ERROR,
+            /*body=*/msg
+        );
+    };
+
+    // ===================================================================== //
+
+    if(!storage.save_nutrition(
+        /*user_id=*/userID,
+        /*entry_date=*/*entry_date,
+        /*calories=*/body.at("nutritionData").at("calories").get<double>(),
+        /*protein=*/body.at("nutritionData").at("protein").get<double>(),
+        /*carbs=*/body.at("nutritionData").at("carbs").get<double>(),
+        /*fat=*/body.at("nutritionData").at("fat").get<double>()
+    )) return err("nutrition");
+
+    if((!storage.save_steps(userID, *entry_date, body.at("fitnessData").at("steps").get<double>())) ||
+       (!storage.save_lap_time(userID, *entry_date, body.at("fitnessData").at("lapTimeSeconds").get<double>())) ||
+       (!storage.save_mile_time(userID, *entry_date, body.at("fitnessData").at("mileTimeSeconds").get<double>()))
+    ) return err("fitness");
+
+    if(!storage.save_hours_slept(userID, *entry_date, body.at("hoursSlept").get<double>()))
+        return err("sleep");
+
+    if(!storage.save_goal(userID, body.at("goal").get_ref<const string &>()))
+        return err("goal");
+
+    return IPCPResponse(
+        /*version=*/IPCP_VERSION,
+        /*type=*/OK_NO_CONTENT
+    );
+} // IPCPResponse put()
+
+IPCPResponse
+put_wrapper(const IPCPRequest & req)
+{
+    // PUT/UPDATE request with no body creates a new account
+    if(req.body.empty())
+        return account::create(req.userID);
+
+    const string * entry_date = req.body.at("entryDate").get_ptr<const string *>();
+    if(!entry_date)
     {
         return IPCPResponse(
-            /*version=*/1,
-            /*status=*/USER_NOT_FOUND,
-            /*body=*/R"({"message": "Invalid userID provided"})"_json
+            /*version=*/IPCP_VERSION,
+            /*status=*/BAD_REQUEST,
+            /*body=*/R"({"message": "No entryDate specified in request"})"_json
         );
     }
 
-    GLOBAL userID_valid = true;
-    return IPCPResponse(
-        /*version=*/1,
-        /*status=*/OK_NO_CONTENT
-    );
-} // IPCPResponse login()
+    return put(req.userID, entry_date, req.body);
 
-int32_t
+} // IPCPResponse put_wrapper()
+
+[[noreturn]] void
 listen(void)
 {
-    // We'll jump out when ready to end.
     while(true)
     {
         IPCPRequest req = IPCP::read();
-        IPCPResponse res(1, SERVER_ERROR); // Default value
+        IPCPResponse res(IPCP_VERSION, SERVER_ERROR); // Default value
 
-        if(req.version != 1)
+        if(req.version != IPCP_VERSION)
         {
+            const string msg = R"({"message": "Server and Client have mismatched version numbers"})"_json;
             res = IPCPResponse(
-                /*version=*/1,
+                /*version=*/IPCP_VERSION,
                 /*status=*/UNSUPPORTED_VERSION,
-                /*body=*/R"({"message": "Server and Client have mismatched version numbers"})"_json
+                /*body=*/msg
             );
-            goto listen_exit;
+
+            util::die(msg);
         }
 
         switch(req.type)
@@ -157,43 +213,31 @@ listen(void)
                 break;
             case PUT: // Fallthrough to UPDATE
             case UPDATE:
-                // Do something
+                res = put_wrapper(req);
                 break;
             case DELETE:
-                // Do something
+                // Still need to implement
                 break;
             case LOGIN:
-                res = login(req);
+                res = account::login(req);
                 break;
             case LOGOUT:
-                goto listen_exit;
+                res = account::logout();
         }
 
         IPCP::write(res);
     }
+} // void listen()
 
-    listen_exit:
-    return EXIT_SUCCESS;
-}
-
-int32_t
+[[noreturn]] int32_t
 main(void)
 {
+    signal(SIGTERM, util::term);
+
     if(!IPCP::init())
-    {
-        IPCP::close();
-        cerr << "Server: Failed to initialize IPCP" << endl;
-        return EXIT_FAILURE;
-    }
-
+        util::die("Server: Failed to initialize IPCP");
     if(!storage.initialize())
-    {
-        cerr << "Server: Failed to initialize database" << endl;
-        return EXIT_FAILURE;
-    }
+        util::die("Server: Failed to initialize database");
 
-    int32_t ret = listen();
-
-    IPCP::close();
-    return ret;
-}
+    listen();
+} // int32_t main()
