@@ -11,14 +11,34 @@ package GUI;
  */
 
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HexFormat;
+import java.util.Locale;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+
 import javafx.application.Application;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -30,13 +50,16 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
@@ -44,22 +67,59 @@ import javafx.stage.Stage;
 
 public class Main extends Application {
     // The FXML files share this fixed canvas size for consistent layout and scaling.
+    private static final String LOGIN_VIEW = "login_page.fxml";
     private static final String HOME_VIEW = "BaseUISoruce.fxml";
     private static final double DESIGN_WIDTH = 1920.0;
     private static final double DESIGN_HEIGHT = 1080.0;
+    private static final byte IPCP_VERSION = 1;
+    private static final byte IPCP_PUT = 1;
+    private static final byte IPCP_LOGIN = 4;
+    private static final int IPCP_OK = 0;
+    private static final int IPCP_OK_NO_CONTENT = 1;
+    private static final int IPCP_REQUEST_SIZE = 10;
+    private static final Path REQUEST_PIPE = Path.of("/tmp/com.hogwarts.health.req");
+    private static final Path RESPONSE_PIPE = Path.of("/tmp/com.hogwarts.health.res");
+    private static final int PASSWORD_HASH_ITERATIONS = 120_000;
+    private static final int PASSWORD_HASH_BITS = 256;
+    private static final int MAX_RESPONSE_BODY_BYTES = 1_048_576;
+    // Per-user editable amounts and all daily, weekly, and monthly targets.
+    private static final String[] ZERO_DEFAULT_KEYS = {
+        "current.daily.steps", "current.daily.water",
+        "current.daily.calories", "current.daily.sleep",
+        "daily.steps", "weekly.steps", "monthly.steps",
+        "daily.water", "weekly.water", "monthly.water",
+        "daily.calories", "weekly.calories", "monthly.calories",
+        "daily.sleep", "weekly.sleep", "monthly.sleep"
+    };
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static DataOutputStream backendOutput;
+    private static DataInputStream backendInput;
 
     // Shared application state and references used while switching JavaFX views.
     private Stage window;
     private StackPane responsiveRoot;
     private Scale contentScale;
-    private String currentView = HOME_VIEW;
-    private String previousView = HOME_VIEW;
+    private String currentView = LOGIN_VIEW;
+    private String previousView = LOGIN_VIEW;
+    private int userId;
     private UnitSystem unitSystem = UnitSystem.METRIC;
-    private final Preferences goalPreferences = Preferences.userNodeForPackage(Main.class);
+    private final Preferences legacyGoalPreferences = Preferences.userNodeForPackage(Main.class);
+    private Preferences goalPreferences = legacyGoalPreferences;
+    private final Preferences accountPreferences =
+            Preferences.userNodeForPackage(Main.class).node("accounts");
 
     // Injected by FXML: this menu displays the selected measurement system.
     @FXML
     private Menu unitsMenu;
+
+    @FXML
+    private TextField UsernameField;
+    @FXML
+    private PasswordField passwordField;
+    @FXML
+    private Label errorMessage;
+    @FXML
+    private Button loginButton;
 
     // Injected by FXML: displays the current date on the home view.
     @FXML
@@ -114,13 +174,13 @@ public class Main extends Application {
         IMPERIAL
     }
 
-    /** Launches the JavaFX application. */
+    /** Enters through the lifecycle launcher so the backend is started first. */
     public static void main(String[] args) {
-        launch(args);
+        Launcher.launch(args);
     }
 
     /**
-     * Creates the main window, installs the responsive scene container, and loads Home.
+     * Creates the main window, installs the responsive scene container, and loads Login.
      *
      * @param primaryStage JavaFX's primary application window
      * @throws IOException if the initial FXML view cannot be loaded
@@ -135,14 +195,18 @@ public class Main extends Application {
         responsiveRoot.heightProperty().addListener((observable, oldHeight, newHeight) -> scaleContent());
         window.setScene(scene);
         window.setTitle("Hogwarts IT Support");
-        // Load the home view first and display it in the main window.
-        setResponsiveView(loadView(HOME_VIEW));
+        setResponsiveView(loadView(LOGIN_VIEW));
         window.show();
     }
 
     /** Routes a navigation menu item or button to its corresponding FXML view. */
     @FXML
     private void navigate(ActionEvent event) {
+        if (userId == 0) {
+            setLoginStatus("Log in before opening the application.");
+            return;
+        }
+
         // Menu items and buttons can both trigger navigation.
         Object source = event.getSource();
         String label = switch (source) {
@@ -187,6 +251,20 @@ public class Main extends Application {
     @FXML
     private void cancelSettings() {
         showView(previousView);
+    }
+
+    /** Clears the active account and returns to the login form. */
+    private void logout() {
+        if (userId == 0) {
+            return;
+        }
+
+        userId = 0;
+        goalPreferences = legacyGoalPreferences;
+        showView(LOGIN_VIEW);
+        UsernameField.clear();
+        passwordField.clear();
+        setLoginStatus("");
     }
 
     /** Sizes a view on the shared design canvas and installs its scale transform. */
@@ -310,12 +388,291 @@ public class Main extends Application {
         FXMLLoader loader = new FXMLLoader(location);
         loader.setController(this);
         Parent view = loader.load();
-        if ("health_app_settings_page.fxml".equals(resource)) {
+        if (!LOGIN_VIEW.equals(resource)) {
+            installLogoutButton(view);
+        }
+        if (LOGIN_VIEW.equals(resource)) {
+            initializeLoginInputs();
+        } else if ("health_app_settings_page.fxml".equals(resource)) {
             initializeGoalInputs();
         } else if ("DailyOverview.fxml".equals(resource)) {
             initializeDailyCurrentInputs();
         }
         return view;
+    }
+
+    /** Adds a logout action to the top-right of each authenticated screen's menu bar. */
+    private void installLogoutButton(Parent view) {
+        if (!(view instanceof VBox screen) || screen.getChildren().isEmpty()
+                || !(screen.getChildren().get(0) instanceof MenuBar menuBar)) {
+            throw new IllegalStateException("Authenticated screen is missing its menu bar.");
+        }
+
+        Button logoutButton = new Button("Log out");
+        logoutButton.setStyle("-fx-font-size: 18px;");
+        logoutButton.setOnAction(event -> logout());
+
+        HBox toolbar = new HBox(menuBar, logoutButton);
+        toolbar.setAlignment(Pos.CENTER_RIGHT);
+        toolbar.setPrefWidth(DESIGN_WIDTH);
+        menuBar.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(menuBar, Priority.ALWAYS);
+        screen.getChildren().set(0, toolbar);
+    }
+
+    /** Connects the login controls after their FXML fields have been injected. */
+    private void initializeLoginInputs() {
+        if (UsernameField == null || passwordField == null
+                || errorMessage == null || loginButton == null) {
+            throw new IllegalStateException("A login form control is missing.");
+        }
+        errorMessage.setDisable(false);
+        errorMessage.setText("");
+        loginButton.setOnAction(event -> login());
+        passwordField.setOnAction(event -> login());
+    }
+
+    /** Checks the form off the JavaFX thread and opens Home after backend login. */
+    private void login() {
+        String username = UsernameField.getText().trim();
+        char[] password = passwordField.getText().toCharArray();
+        if (username.isEmpty() || password.length == 0) {
+            Arrays.fill(password, '\0');
+            setLoginStatus("Enter both a username and password.");
+            return;
+        }
+
+        setLoginFormDisabled(true);
+        errorMessage.setText("Signing in...");
+        Task<Integer> loginTask = new Task<>() {
+            @Override
+            protected Integer call() throws Exception {
+                try {
+                    return createOrLoginAccount(username, password);
+                } finally {
+                    Arrays.fill(password, '\0');
+                }
+            }
+        };
+        loginTask.setOnSucceeded(event -> {
+            userId = loginTask.getValue();
+            goalPreferences = accountDataPreferences(userId);
+            passwordField.clear();
+            setLoginFormDisabled(false);
+            showView(HOME_VIEW);
+        });
+        loginTask.setOnFailed(event -> {
+            passwordField.clear();
+            setLoginFormDisabled(false);
+            Throwable failure = loginTask.getException();
+            setLoginStatus(failure == null
+                    ? "Login failed."
+                    : failure.getMessage() == null ? "Login failed." : failure.getMessage());
+        });
+
+        Thread worker = new Thread(loginTask, "account-login");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    /**
+     * Reuses a locally mapped ID or creates one, then creates/logs into it remotely.
+     * The password verifier stays local; only the numeric ID is sent over IPCP.
+     */
+    private int createOrLoginAccount(String username, char[] password) throws Exception {
+        String accountKey = "account-" + HexFormat.of().formatHex(
+                MessageDigest.getInstance("SHA-256").digest(
+                        username.toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8)));
+        Preferences account = accountPreferences.node(accountKey);
+
+        int id = account.getInt("userId", 0);
+        boolean newAccount = id == 0;
+        String storedSalt = account.get("passwordSalt", null);
+        String storedHash = account.get("passwordHash", null);
+        if (newAccount) {
+            if (storedSalt != null || storedHash != null) {
+                throw new IOException("Saved account information is incomplete.");
+            }
+
+            id = SECURE_RANDOM.nextInt(Integer.MAX_VALUE) + 1;
+            byte[] salt = new byte[16];
+            SECURE_RANDOM.nextBytes(salt);
+            // Persist a salted verifier instead of retaining the supplied password.
+            byte[] hash = hashPassword(password, salt);
+            account.putInt("userId", id);
+            account.put("passwordSalt", Base64.getEncoder().encodeToString(salt));
+            account.put("passwordHash", Base64.getEncoder().encodeToString(hash));
+            flushPreferences();
+        } else {
+            if (storedSalt == null || storedHash == null) {
+                throw new IOException("Saved account information is incomplete.");
+            }
+
+            byte[] salt;
+            byte[] expectedHash;
+            try {
+                salt = Base64.getDecoder().decode(storedSalt);
+                expectedHash = Base64.getDecoder().decode(storedHash);
+            } catch (IllegalArgumentException e) {
+                throw new IOException("Saved account information is invalid.", e);
+            }
+            if (!MessageDigest.isEqual(expectedHash, hashPassword(password, salt))) {
+                throw new IOException("Incorrect username or password.");
+            }
+        }
+
+        initializeAccountData(id, newAccount);
+        sendAccountRequest(IPCP_PUT, id);
+        sendAccountRequest(IPCP_LOGIN, id);
+        return id;
+    }
+
+    /**
+     * Creates per-account numeric defaults once, migrating prior local values for returning users.
+     */
+    private void initializeAccountData(int id, boolean newAccount) throws IOException {
+        Preferences data = accountDataPreferences(id);
+        if (data.getBoolean("zeroDefaultsInitialized", false)) {
+            return;
+        }
+
+        for (String key : ZERO_DEFAULT_KEYS) {
+            String previousValue = newAccount ? null : legacyGoalPreferences.get(key, null);
+            data.put(key, previousValue == null || previousValue.isEmpty()
+                    ? "0" : previousValue);
+        }
+        data.putBoolean("zeroDefaultsInitialized", true);
+        flushPreferences();
+    }
+
+    /** Returns the local values and goals node for one backend user ID. */
+    private Preferences accountDataPreferences(int id) {
+        return accountPreferences.node("data").node(Integer.toString(id));
+    }
+
+    /** Derives the local password verifier with PBKDF2 and the account's random salt. */
+    private static byte[] hashPassword(char[] password, byte[] salt)
+            throws GeneralSecurityException {
+        PBEKeySpec keySpec = new PBEKeySpec(
+                password, salt, PASSWORD_HASH_ITERATIONS, PASSWORD_HASH_BITS);
+        try {
+            return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+                    .generateSecret(keySpec).getEncoded();
+        } finally {
+            keySpec.clearPassword();
+        }
+    }
+
+    /** Sends an empty-body create/login IPCP packet and checks its response status. */
+    private static void sendAccountRequest(byte type, int id) throws IOException {
+        synchronized (Main.class) {
+            int version;
+            int status;
+            byte[] body;
+            try {
+                openBackendPipes();
+                // Encode the six-byte header and four-byte length for an empty body.
+                ByteBuffer request = ByteBuffer.allocate(IPCP_REQUEST_SIZE)
+                        .order(ByteOrder.BIG_ENDIAN);
+                request.put(IPCP_VERSION).put(type).putInt(id).putInt(0);
+                backendOutput.write(request.array());
+                backendOutput.flush();
+
+                version = backendInput.readUnsignedByte();
+                status = backendInput.readUnsignedByte();
+                int bodyLength = backendInput.readInt();
+                if (bodyLength < 0 || bodyLength > MAX_RESPONSE_BODY_BYTES) {
+                    throw new IOException("Backend returned an invalid response.");
+                }
+                body = new byte[bodyLength];
+                backendInput.readFully(body);
+            } catch (IOException e) {
+                closeBackendPipes();
+                throw e;
+            }
+
+            if (version != IPCP_VERSION
+                    || (status != IPCP_OK && status != IPCP_OK_NO_CONTENT)) {
+                String detail = new String(body, StandardCharsets.UTF_8).trim();
+                throw new IOException(detail.isEmpty()
+                        ? "Backend rejected the account request (status " + status + ")."
+                        : "Backend rejected the account request: " + detail);
+            }
+        }
+    }
+
+    /** Opens the backend's persistent request and response FIFOs once per app run. */
+    private static void openBackendPipes() throws IOException {
+        if (backendOutput != null && backendInput != null) {
+            return;
+        }
+        if (!Files.exists(REQUEST_PIPE) || !Files.exists(RESPONSE_PIPE)) {
+            throw new IOException("Could not connect to IPCP; make sure the backend is running.");
+        }
+
+        DataOutputStream output = new DataOutputStream(
+                new FileOutputStream(REQUEST_PIPE.toFile()));
+        try {
+            DataInputStream input = new DataInputStream(
+                    new FileInputStream(RESPONSE_PIPE.toFile()));
+            backendOutput = output;
+            backendInput = input;
+        } catch (IOException e) {
+            output.close();
+            throw e;
+        }
+    }
+
+    /** Releases both FIFO streams when the GUI lifecycle ends or IPCP fails. */
+    private static void closeBackendPipes() {
+        DataInputStream input = backendInput;
+        DataOutputStream output = backendOutput;
+        backendInput = null;
+        backendOutput = null;
+        try {
+            if (input != null) {
+                input.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Could not close IPCP response pipe: " + e.getMessage());
+        }
+        try {
+            if (output != null) {
+                output.close();
+            }
+        } catch (IOException e) {
+            System.err.println("Could not close IPCP request pipe: " + e.getMessage());
+        }
+    }
+
+    /** Flushes the username-to-ID and password-verifier mapping to local storage. */
+    private void flushPreferences() throws IOException {
+        try {
+            accountPreferences.flush();
+        } catch (BackingStoreException e) {
+            throw new IOException("Could not save this account on the device.", e);
+        }
+    }
+
+    /** Prevents duplicate login requests while the background request is active. */
+    private void setLoginFormDisabled(boolean disabled) {
+        UsernameField.setDisable(disabled);
+        passwordField.setDisable(disabled);
+        loginButton.setDisable(disabled);
+    }
+
+    /** Displays validation or backend errors on the login screen. */
+    private void setLoginStatus(String message) {
+        if (errorMessage != null) {
+            errorMessage.setText(message);
+            errorMessage.setDisable(false);
+        }
+    }
+
+    /** Closes the frontend's IPCP streams before the launcher stops the backend. */
+    @Override
+    public void stop() {
+        closeBackendPipes();
     }
 
     /** Connects the daily overview's current-amount inputs to saved preferences. */
@@ -379,7 +736,7 @@ public class Main extends Application {
 
         field.setTextFormatter(new TextFormatter<String>(change ->
                 isValidAmount(change.getControlNewText(), integer) ? change : null));
-        field.setText(goalPreferences.get(preferenceKey, ""));
+        field.setText(goalPreferences.get(preferenceKey, "0"));
         field.setOnAction(event -> saveGoal(field, preferenceKey, integer));
         field.focusedProperty().addListener((observable, wasFocused, isFocused) -> {
             if (wasFocused && !isFocused) {
@@ -443,13 +800,11 @@ public class Main extends Application {
         }
 
         try {
-            if (value.isEmpty()) {
-                goalPreferences.remove(preferenceKey);
-            } else {
-                goalPreferences.put(preferenceKey, value);
-            }
+            String storedValue = value.isEmpty() ? "0" : value;
+            goalPreferences.put(preferenceKey, storedValue);
             goalPreferences.flush();
-            goalStatusLabel.setText(value.isEmpty() ? "Goal cleared." : "Goal saved.");
+            field.setText(storedValue);
+            goalStatusLabel.setText("Goal saved.");
             updateGoalDisplays();
             updateGoalCharts();
         } catch (BackingStoreException e) {
@@ -533,12 +888,10 @@ public class Main extends Application {
             throw new IllegalStateException("Metric value is missing its unit.");
         }
 
-        String goal = goalPreferences.get(preferenceKey, "");
-        String formattedGoal = goal.isEmpty()
-                ? "Set goal"
-                : integer
-                        ? "%,d".formatted(Integer.parseInt(goal))
-                        : "%.1f".formatted(Double.parseDouble(goal));
+        String goal = goalPreferences.get(preferenceKey, "0");
+        String formattedGoal = integer
+                ? "%,d".formatted(Integer.parseInt(goal))
+                : "%.1f".formatted(Double.parseDouble(goal));
         goalValue.setText(currentText.substring(0, unitSeparator)
                 + " / " + formattedGoal + " " + unit);
     }
@@ -574,14 +927,13 @@ public class Main extends Application {
         }
 
         double current = readCurrentAmount(currentValue);
-        String savedGoal = goalPreferences.get(preferenceKey, "");
-        double goal = savedGoal.isEmpty() ? 0.0 : Double.parseDouble(savedGoal);
+        String savedGoal = goalPreferences.get(preferenceKey, "0");
+        double goal = Double.parseDouble(savedGoal);
         PieChart chart = createGoalPieChart(current, goal, unit);
         boolean integer = "steps".equals(unit) || "kcal".equals(unit);
-        Label amountLabel = new Label(goal <= 0.0
-                ? "%s %s\nGoal not set".formatted(formatChartAmount(current, integer), unit)
-                : "%s / %s %s".formatted(formatChartAmount(current, integer),
-                        formatChartAmount(goal, integer), unit));
+        Label amountLabel = new Label("%s / %s %s".formatted(
+                formatChartAmount(current, integer),
+                formatChartAmount(goal, integer), unit));
         amountLabel.setFont(Font.font(20.0));
         amountLabel.setWrapText(true);
         amountLabel.setMaxWidth(300.0);
@@ -608,9 +960,8 @@ public class Main extends Application {
         chart.setMaxSize(280.0, 220.0);
 
         if (goal <= 0.0) {
-            chart.setTitle("Set goal");
-            chart.getData().setAll(new PieChart.Data("Goal not set", 1.0));
-            Tooltip.install(chart, new Tooltip("Set a goal to see progress."));
+            chart.setTitle("0%");
+            Tooltip.install(chart, new Tooltip("Goal is 0 " + unit + "; no progress slice is shown."));
             return chart;
         }
 

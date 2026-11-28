@@ -47,6 +47,7 @@ class IPCPResponse
 
     private static final int INT_SIZE = 4;
     private static final StatusCode[] statuses = StatusCode.values();
+    /** Decodes a response header and body, reporting malformed packets as BAD_RESPONSE. */
     public IPCPResponse(byte[] header, InputStream res_pipe)
     {
         try
@@ -62,6 +63,7 @@ class IPCPResponse
         }
     } // IPCPResponse()
 
+    /** Reads the big-endian body length and parses the following UTF-8 JSON bytes. */
     private static JSONObject
     deserialize(InputStream res_pipe) throws Exception
     {

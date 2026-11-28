@@ -399,3 +399,62 @@ double Storage::get_hours_slept(int user_id, const std::string& entry_date){
 
     return hours;
 }
+
+//modifed by Gabriel to resolve building errors I was getting. Double check that this is correct and works as intended. (was ai generated as I was getting irritated)
+
+
+// Adds one goal to the authenticated user's goal list.
+bool Storage::save_goal(int user_id, const std::string& goal_text){
+    if(!initialized)
+        return false;
+
+    // Bind both values so goal text is stored as data, not interpreted as SQL.
+    const char* sql = R"(
+        INSERT INTO Goals(user_id, goal_text)
+        VALUES (?, ?))";
+    sqlite3_stmt* statement = nullptr;
+
+    int result = sqlite3_prepare_v2(db, sql, -1, &statement, nullptr);
+    if(result != SQLITE_OK)
+        return false;
+
+    sqlite3_bind_int(statement, 1, user_id);
+    sqlite3_bind_text(statement, 2, goal_text.c_str(), -1, SQLITE_TRANSIENT);
+    result = sqlite3_step(statement);
+    sqlite3_finalize(statement);
+    return result == SQLITE_DONE;
+}
+
+// Returns the user's goals in the order they were saved.
+vector<string> Storage::get_goals(int user_id){
+    vector<string> goals;
+    if(!initialized)
+        return goals;
+
+    // Preserve insertion order so callers receive goals consistently.
+    const char* sql = R"(
+        SELECT goal_text FROM Goals
+        WHERE user_id = ?
+        ORDER BY goal_id)";
+    sqlite3_stmt* statement = nullptr;
+
+    int result = sqlite3_prepare_v2(db, sql, -1, &statement, nullptr);
+    if(result != SQLITE_OK){
+        cerr << "Database error retrieving goals: " << sqlite3_errmsg(db) << endl;
+        return goals;
+    }
+
+    sqlite3_bind_int(statement, 1, user_id);
+    while((result = sqlite3_step(statement)) == SQLITE_ROW){
+        const unsigned char* text = sqlite3_column_text(statement, 0);
+        goals.emplace_back(text ? reinterpret_cast<const char*>(text) : "");
+    }
+
+    sqlite3_finalize(statement);
+    if(result != SQLITE_DONE){
+        cerr << "Database error retrieving goals: " << sqlite3_errmsg(db) << endl;
+        goals.clear();
+    }
+
+    return goals;
+}

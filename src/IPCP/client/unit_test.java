@@ -3,8 +3,10 @@ package IPCP.client;
 import java.io.IOException;
 import org.json.JSONObject;
 
+/** Small manual client/server smoke test for IPCP pipe initialization and request exchange. */
 class unit_test
 {
+    /** Connects to the backend, sends one update request, and closes the client pipes. */
     public static void main(String args[]) throws IOException
     {
         System.out.println("\n=== Testing init system ===");

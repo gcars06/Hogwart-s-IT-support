@@ -32,6 +32,11 @@ public class IPCP
     // IPCP should only be used statically
     private IPCP() {}
 
+    /**
+    * Opens the request and response FIFOs created by the running backend.
+    *
+    * @return true when both streams are ready for requests
+    */
     public static boolean init()
     {
         if(out != null && in != null)
@@ -61,6 +66,7 @@ public class IPCP
         }
     } // boolean init()
 
+    /** Closes both streams and resets the client so it can be initialized again. */
     public static void close()
     {
         try { if(out != null) out.close(); } catch(IOException _ignored) {}
@@ -70,6 +76,13 @@ public class IPCP
         in = null;
     } // void close()
 
+    /**
+    * Writes one request and reads its corresponding response.
+    *
+    * @param req request packet to send
+    * @return the backend's decoded response
+    * @throws IOException if a pipe read or write fails
+    */
     public static IPCPResponse send(IPCPRequest req) throws IOException
     {
         out.write(req.getBytes());

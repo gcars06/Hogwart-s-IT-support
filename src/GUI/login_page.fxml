@@ -34,6 +34,6 @@
       <TextField fx:id="UsernameField" maxWidth="250.0" promptText="Username" />
       <PasswordField fx:id="passwordField" maxWidth="250.0" promptText="Password" />
       <Label fx:id="errorMessage" disable="true" text="Error Message" textFill="#ff0900" />
-      <Button fx:id="loginButtom" maxWidth="250.0" mnemonicParsing="false" text="Log in" />
+      <Button fx:id="loginButton" maxWidth="250.0" mnemonicParsing="false" text="Log in" />
    </children>
 </VBox>

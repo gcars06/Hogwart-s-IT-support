@@ -49,6 +49,7 @@ public class IPCPRequest
     // Body
     public JSONObject body;
 
+    /** Creates a request from its protocol header fields and JSON body. */
     public IPCPRequest(byte version, Type type, int userID, JSONObject body)
     {
         this.version = version;
@@ -57,16 +58,21 @@ public class IPCPRequest
         this.body = body;
     } // IPCPRequest()
 
+    /** Parses a serialized JSON body and delegates to the main constructor. */
     public IPCPRequest(byte version, Type type, int userID, String body)
     {
         this(version, type, userID, new JSONObject(body));
     } // IPCPRequest()
 
     private static final int INT_SIZE = 4;
+    /** Encodes the header and UTF-8 JSON body using IPCP's big-endian lengths. */
     public byte[] getBytes()
     {
-        String body_s = this.body.isEmpty() ? null : this.body.toString(); // body_s(erialized)
-        int body_len = body_s == null ? 0 : body_s.length();
+        // The protocol length is bytes on the wire, not Java UTF-16 characters.
+        byte[] body_bytes = this.body.isEmpty()
+                ? new byte[0]
+                : this.body.toString().getBytes(StandardCharsets.UTF_8);
+        int body_len = body_bytes.length;
 
         byte[] buf = new byte[this.header_size + INT_SIZE + body_len];
         int bufp = 0; // Next free position in buf
@@ -86,12 +92,7 @@ public class IPCPRequest
         buf[bufp++] = (byte) body_len;         // LSB
 
         // Body
-        if(body_s != null)
-        {
-            byte[] body_bytes = body_s.getBytes(StandardCharsets.UTF_8);
-            for(byte b : body_bytes)
-                buf[bufp++] = b;
-        }
+        System.arraycopy(body_bytes, 0, buf, bufp, body_len);
 
         return buf;
     } // byte[] getBytes()
